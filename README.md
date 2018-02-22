@@ -19,4 +19,4 @@ The Weka engine is bundled with PMI, so no further installation is required for 
 
 License
 -------
-Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
+Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3.0. See LICENSE.txt for more information.
