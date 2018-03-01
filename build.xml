@@ -42,9 +42,6 @@ explicitly covering such access.
     <fileset dir="${swt.lib.dir}/win32">
       <include name="**/*.jar" />
     </fileset>
-    <fileset dir="${ext.lib.dir}">
-      <include name="**/*.jar" />
-    </fileset>
     <fileset dir="${provided.lib.dir}">
       <include name="**/*.jar" />
     </fileset>
@@ -64,9 +61,6 @@ explicitly covering such access.
       <include name="**/*.jar" />
     </fileset>
     <fileset dir="${swt.lib.dir}/win32">
-      <include name="**/*.jar" />
-    </fileset>
-    <fileset dir="${ext.lib.dir}">
       <include name="**/*.jar" />
     </fileset>
     <fileset dir="${provided.lib.dir}">
@@ -90,9 +84,6 @@ explicitly covering such access.
 
   <target name="assemble.copy-libs" depends="subfloor-pkg.assemble.copy-libs">
     <move file="${approot.stage.dir}/lib/${ivy.artifact.id}-${project.revision}.jar" tofile="${approot.stage.dir}/${ivy.artifact.id}-${project.revision}.jar"/>
-    <copy todir="${approot.stage.dir}/lib">
-      <fileset dir="${ext.lib.dir}" includes="**/*.jar"/>
-    </copy>
     <!-- Update the version.xml with the current version of this plugin -->
     <copy file="res/version.xml" todir="${approot.stage.dir}" />
     <replace file="${approot.stage.dir}/version.xml" token="@TRUNK@" value="${project.revision}" />
