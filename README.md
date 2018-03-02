@@ -1,7 +1,7 @@
-Pentaho Machine Intelligence
+Plugin Machine Intelligence
 ============================
 
-The Pentaho Machine Intelligence (PMI) project is a plugin for the Pentaho Kettle engine that (initially) provides access to supervised machine learning algorithms from various underlying "engines". Out of the box, PMI provides four engines: Weka, Python scikit-learn, R MLR and Spark MLlib. The following learning schemes are supported, and are available in most of the engines: decision tree classifier, decision tree regressor, gradient boosted trees, linear regression, logistic regression, naive Bayes, naive Bayes multinomial, naive Bayes incremental, random forest classifier, random forest regressor, support vector classifier and support vector regressor. PMI is designed to be extensible via the addition of new engines and algorithms.
+The Plugin Machine Intelligence (PMI) project is a plugin for the Pentaho Kettle engine that (initially) provides access to supervised machine learning algorithms from various underlying "engines". Out of the box, PMI provides four engines: Weka, Python scikit-learn, R MLR and Spark MLlib. The following learning schemes are supported, and are available in most of the engines: decision tree classifier, decision tree regressor, gradient boosted trees, linear regression, logistic regression, naive Bayes, naive Bayes multinomial, naive Bayes incremental, random forest classifier, random forest regressor, support vector classifier and support vector regressor. PMI is designed to be extensible via the addition of new engines and algorithms.
 
 Building
 --------
@@ -11,7 +11,7 @@ The PMI Plugin is built with Apache Ant and uses Apache Ivy for dependency manag
     $ cd pentaho-machine-intelligence
     $ ant resolve dist
 
-This will produce a plugin archive in dist/pentaho-machine-intelligence-${project.revision}.zip. This archive can then be extracted into your Pentaho Data Integration plugin directory.
+This will produce a plugin archive in dist/plugin-machine-intelligence-${project.revision}.zip. This archive can then be extracted into your Pentaho Data Integration plugin directory.
 
 Requirements
 ---------------
