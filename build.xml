@@ -86,6 +86,7 @@ explicitly covering such access.
     <move file="${approot.stage.dir}/lib/${ivy.artifact.id}-${project.revision}.jar" tofile="${approot.stage.dir}/${ivy.artifact.id}-${project.revision}.jar"/>
     <!-- Update the version.xml with the current version of this plugin -->
     <copy file="res/version.xml" todir="${approot.stage.dir}" />
+    <copy file="plugin-machine-intelligence-master_OSS_Licenses.html" todir="${approot.stage.dir}" />
     <replace file="${approot.stage.dir}/version.xml" token="@TRUNK@" value="${project.revision}" />
   </target>
 
