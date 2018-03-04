@@ -48,6 +48,7 @@ public class PMILifecycleListener implements KettleLifecycleListener {
     try {
       // make sure the package metadata cache is established first
       WekaPackageManager.establishCacheIfNeeded( System.out );
+      WekaPackageManager.checkForNewPackages( System.out );
 
       // python dependency
       weka.core.packageManagement.Package
