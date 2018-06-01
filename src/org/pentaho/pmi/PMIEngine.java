@@ -56,7 +56,7 @@ public abstract class PMIEngine {
 
   protected static Map<String, String> s_availableEngines = new LinkedHashMap<>();
 
-  public static void init() {
+  public synchronized static void init() {
     if ( s_availableEngines.size() == 0 ) {
 
       String engineNames = System.getProperty( SUPPORTED_ENGINE_PROPERTY_KEY, "" );

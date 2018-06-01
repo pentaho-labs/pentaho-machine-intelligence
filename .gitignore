@@ -1,6 +1,7 @@
 test-lib
 lib-provided
 lib
+libswt
 dist
 bin
 .DS_Store
