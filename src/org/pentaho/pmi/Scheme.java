@@ -150,6 +150,13 @@ public abstract class Scheme {
   public abstract boolean supportsIncrementalTraining();
 
   /**
+   * Subclass should return true if the scheme can handle string attributes directly
+   *
+   * @return true if the configured scheme can handle string attributes directly
+   */
+  public abstract boolean canHandleStringAttributes();
+
+  /**
    * Get a map of meta information about the scheme and its parameters, useful for building editor dialogs
    *
    * @return a map of meta information about the scheme and its parameters

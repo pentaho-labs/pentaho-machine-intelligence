@@ -32,6 +32,7 @@ import weka.classifiers.bayes.NaiveBayesMultinomial;
 import weka.classifiers.bayes.NaiveBayesUpdateable;
 import weka.classifiers.functions.LinearRegression;
 import weka.classifiers.functions.Logistic;
+import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.functions.SGD;
 import weka.classifiers.meta.LogitBoost;
 import weka.classifiers.trees.J48;
@@ -161,6 +162,9 @@ public class WekaClassifierScheme extends SupervisedScheme {
       // user can adjust loss function to epsilon insensitive for SVM regression
     } else if ( schemeName.equalsIgnoreCase( "Incremental Naive Bayes" ) ) {
       m_underlyingScheme = new NaiveBayes();
+    } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) || schemeName
+        .equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
+      m_underlyingScheme = new MultilayerPerceptron();
     } else {
       throw new UnsupportedSchemeException(
           "Classification/regression scheme '" + schemeName + "' is unsupported in Weka" );
@@ -215,6 +219,15 @@ public class WekaClassifierScheme extends SupervisedScheme {
     return m_underlyingScheme instanceof UpdateableClassifier;
   }
 
+  /**
+   * Returns true if the configured scheme can directly handle string attributes
+   *
+   * @return true if the configured scheme can directly handle string attributes
+   */
+  @Override public boolean canHandleStringAttributes() {
+    return false;
+  }
+
   @Override public Map<String, Object> getSchemeInfo() throws Exception {
     return SchemeUtils.getSchemeParameters( m_underlyingScheme );
   }
@@ -267,6 +280,10 @@ public class WekaClassifierScheme extends SupervisedScheme {
    */
   @Override public Object getConfiguredScheme( Instances incomingHeader ) throws Exception {
     // TODO if SGD-based methods are selected will need to be wrapped in MultiClassClassifierIncremental
+
+    if ( m_underlyingScheme instanceof MultilayerPerceptron ) {
+      ( (MultilayerPerceptron) m_underlyingScheme ).setGUI( false ); // make sure GUI is not turned on!
+    }
     return adjustForSamplingAndPreprocessing( incomingHeader, m_underlyingScheme );
   }
 }

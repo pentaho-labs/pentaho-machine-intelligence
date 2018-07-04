@@ -46,6 +46,7 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import org.pentaho.pmi.Scheme;
 import org.pentaho.pmi.SchemeUtils;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,7 +105,6 @@ public class GOEDialog extends Dialog {
     String title = m_objectToEditMeta.get( "topLevelClass" ).toString();
     title = title.substring( title.lastIndexOf( '.' ) + 1 );
     m_shell.setText( title );
-    int margin = 4;
 
     buildEditorSheet();
 
@@ -236,7 +236,7 @@ public class GOEDialog extends Dialog {
       String tipText = (String) propDetails.get( "tip-text" );
       final String type = (String) propDetails.get( "type" );
       String propLabelText = (String) propDetails.get( "label" );
-      Object value = propDetails.get( "value" );
+      final Object value = propDetails.get( "value" );
 
       final Label propLabel = new Label( m_shell, SWT.RIGHT );
       m_props.setLook( propLabel );
@@ -273,7 +273,6 @@ public class GOEDialog extends Dialog {
         objectChooseBut.addSelectionListener( new SelectionAdapter() {
           @Override public void widgetSelected( SelectionEvent selectionEvent ) {
             super.widgetSelected( selectionEvent );
-            Object selectedObject = null;
             try {
               objectChooseBut.setEnabled( false );
               objectValEditBut.setEnabled( false );
@@ -324,7 +323,45 @@ public class GOEDialog extends Dialog {
 
         lastControl = objectValEditBut;
       } else if ( type.equalsIgnoreCase( "array" ) ) {
-        // TODO
+        String arrayType = (String) propDetails.get( "array-type" );
+        if ( arrayType != null && arrayType.length() > 0 && arrayType.equalsIgnoreCase( "object" ) ) {
+          // just handle objects for now...
+          // value holds element type class : num elements in array
+          // objectValue holds the array itself
+
+          final Label arrayElementType = new Label( m_shell, SWT.RIGHT );
+          m_props.setLook( arrayElementType );
+          arrayElementType.setText( value.toString() );
+          arrayElementType.setLayoutData( getFirstPromptFormData( propLabel ) );
+
+          final Button arrayValEditBut = new Button( m_shell, SWT.PUSH );
+          m_props.setLook( arrayValEditBut );
+          arrayValEditBut.setText( "Edit..." );
+          arrayValEditBut.setLayoutData( getSecondPromptFormData( arrayElementType ) );
+
+          lastControl = arrayValEditBut;
+
+          arrayValEditBut.addSelectionListener( new SelectionAdapter() {
+            @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+              super.widgetSelected( selectionEvent );
+              arrayValEditBut.setEnabled( false );
+              Object arrValue = propDetails.get( "objectValue" );
+              try {
+                GAEDialog
+                    dialog =
+                    new GAEDialog( m_shell, SWT.OK | SWT.CANCEL, arrValue, (Class<?>) value, m_vars );
+                dialog.open();
+                Object newArrValue = dialog.getArray();
+                propDetails.put( "objectValue", newArrValue );
+                arrayElementType.setText( value.toString() + " : " + Array.getLength( newArrValue ) );
+              } catch ( Exception ex ) {
+                ex.printStackTrace();
+              } finally {
+                arrayValEditBut.setEnabled( true );
+              }
+            }
+          } );
+        }
       } else if ( type.equalsIgnoreCase( "pick-list" ) ) {
         String pickListValues = (String) propDetails.get( "pick-list-values" );
         String[] vals = pickListValues.split( "," );

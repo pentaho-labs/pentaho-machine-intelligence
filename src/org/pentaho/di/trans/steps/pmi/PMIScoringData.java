@@ -451,8 +451,11 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
 
     Instances batch = new Instances( model.getHeader(), inputRows.size() );
     for ( Object[] r : inputRows ) {
-      Instance inst = constructInstance( inputMeta, r, mappingIndexes, model, true );
+      Instance inst = constructInstance( batch, inputMeta, r, mappingIndexes, model, true, true );
       batch.add( inst );
+    }
+    for ( int i = 0; i < batch.numInstances(); i++ ) {
+      batch.instance( i ).setClassMissing();
     }
 
     double[][] preds = model.distributionsForInstances( batch );
@@ -528,7 +531,8 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
 
     // need to construct an Instance to represent this
     // input row
-    Instance toScore = constructInstance( inputMeta, inputRow, mappingIndexes, model, false );
+    Instance toScore = constructInstance( model.getHeader(), inputMeta, inputRow, mappingIndexes, model, false, false );
+    toScore.setClassMissing();
     double[] prediction = model.distributionForInstance( toScore );
 
     // Update the model??
@@ -601,7 +605,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
     } else {
       Instances batch = new Instances( getModel().getHeader(), inputRows.size() );
       for ( Object[] r : inputRows ) {
-        Instance inst = constructInstance( inputMeta, r, m_mappingIndexes, getModel(), true );
+        Instance inst = constructInstance( batch, inputMeta, r, m_mappingIndexes, getModel(), true, true );
         batch.add( inst );
       }
 
@@ -637,7 +641,9 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
       // end of input data - generate eval output row
       outputRow = m_eval.getEvalRow( null, outputMeta, -1 );
     } else {
-      Instance toPredict = constructInstance( inputMeta, inputRow, m_mappingIndexes, getModel(), false );
+      Instance
+          toPredict =
+          constructInstance( getModel().getHeader(), inputMeta, inputRow, m_mappingIndexes, getModel(), false, false );
       m_eval.setTrainedClassifier( (Classifier) getModel().getModel() );
       m_eval.performEvaluationIncremental( toPredict, meta.getLog() );
     }
@@ -650,16 +656,19 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
    * on incoming PDI fields and pre-constructed attribute-to-field mapping
    * data.
    *
+   * @param header         the header to use
    * @param inputMeta      a <code>RowMetaInterface</code> value
    * @param inputRow       an <code>Object</code> value
    * @param mappingIndexes an <code>int</code> value
    * @param model          a <code>PMIScoringModel</code> value
+   * @param freshVector    true if a fresh array of doubles should be created (necessary for processing batches for BatchPredictors)
+   * @param addStringVals  true to add string values (rather than setting) in the header. Again, necessary for BatchPredictors
    * @return an <code>Instance</code> value
    */
-  private Instance constructInstance( RowMetaInterface inputMeta, Object[] inputRow, int[] mappingIndexes,
-      PMIScoringModel model, boolean freshVector ) {
+  private Instance constructInstance( Instances header, RowMetaInterface inputMeta, Object[] inputRow,
+      int[] mappingIndexes, PMIScoringModel model, boolean freshVector, boolean addStringVals ) {
 
-    Instances header = model.getHeader();
+    // Instances header = model.getHeader();
 
     // Re-use this array (unless told otherwise) to avoid an object creation
     if ( m_vals == null || freshVector ) {
@@ -712,8 +721,12 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
             case Attribute.STRING: {
               String s2 = tempField.getString( inputVal );
               // Set the attribute in the header to contain just this string value
-              temp.setStringValue( s2 );
-              m_vals[i] = 0.0;
+              if ( addStringVals ) {
+                m_vals[i] = temp.addStringValue( s2 );
+              } else {
+                temp.setStringValue( s2 );
+                m_vals[i] = 0.0;
+              }
               break;
             }
             default:

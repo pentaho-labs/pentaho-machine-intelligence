@@ -45,9 +45,6 @@ public class MLlibEngine extends PMIEngine {
   /** Engine class */
   public static final String ENGINE_CLASS = MLlibEngine.class.getCanonicalName();
 
-  /** A list of those schemes that are not available in MLlib */
-  protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental", "Support vector regressor" );
-
   /**
    * Get the name of the engine
    *
@@ -82,7 +79,7 @@ public class MLlibEngine extends PMIEngine {
    * @return true if the named scheme is supported
    */
   @Override public boolean supportsScheme( String schemeName ) {
-    return SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes.contains( schemeName );
+    return SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !MLlibScheme.s_excludedSchemes.contains( schemeName );
   }
 
   /**

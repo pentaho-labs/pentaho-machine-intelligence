@@ -49,6 +49,7 @@ public class PMILifecycleListener implements KettleLifecycleListener {
       // make sure the package metadata cache is established first
       WekaPackageManager.establishCacheIfNeeded( System.out );
       WekaPackageManager.checkForNewPackages( System.out );
+      String thisName = System.getProperty( "os.name" );
 
       // python dependency
       weka.core.packageManagement.Package
@@ -101,6 +102,42 @@ public class PMILifecycleListener implements KettleLifecycleListener {
             + latestCompatibleVersion );
         WekaPackageManager
             .installPackageFromRepository( "distributedWekaSparkDev", latestCompatibleVersion, System.out );
+      }
+
+      // see if we can install a netlib native package to speed up linear regression in Weka.
+      if ( thisName.toLowerCase().contains( "mac" ) ) {
+        weka.core.packageManagement.Package
+            netlibNative =
+            weka.core.WekaPackageManager.getInstalledPackageInfo( "netlibNativeOSX" );
+        if ( netlibNative == null ) {
+          String latestCompatibleVersion = getLatestVersion( "netlibNativeOSX" );
+          System.out.println( "[PMI] netlibNativeOSX package is not installed - attempting to install version "
+              + latestCompatibleVersion );
+          weka.core.WekaPackageManager
+              .installPackageFromRepository( "netlibNativeOSX", latestCompatibleVersion, System.out );
+        }
+      } else if ( thisName.toLowerCase().contains( "win" ) ) {
+        weka.core.packageManagement.Package
+            netlibNative =
+            weka.core.WekaPackageManager.getInstalledPackageInfo( "netlibNativeWindows" );
+        if ( netlibNative == null ) {
+          String latestCompatibleVersion = getLatestVersion( "netlibNativeWindows" );
+          System.out.println( "[PMI] netlibNativeWindows package is not installed - attempting to install version "
+              + latestCompatibleVersion );
+          weka.core.WekaPackageManager
+              .installPackageFromRepository( "netlibNativeWindows", latestCompatibleVersion, System.out );
+        }
+      } else if ( thisName.toLowerCase().contains( "linux" ) ) {
+        weka.core.packageManagement.Package
+            netlibNative =
+            weka.core.WekaPackageManager.getInstalledPackageInfo( "netlibNativeLinux" );
+        if ( netlibNative == null ) {
+          String latestCompatibleVersion = getLatestVersion( "netlibNativeLinux" );
+          System.out.println( "[PMI] netlibNativeLinux package is not installed - attempting to install version "
+              + latestCompatibleVersion );
+          weka.core.WekaPackageManager
+              .installPackageFromRepository( "netlibNativeLinux", latestCompatibleVersion, System.out );
+        }
       }
     } catch ( Exception e ) {
       e.printStackTrace();

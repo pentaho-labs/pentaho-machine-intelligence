@@ -35,19 +35,15 @@ import java.util.List;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-public abstract class RScheme extends Scheme {
-
-  /** A list of those schemes that are not available in MLR */
-  protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental", "Naive Bayes multinomial" );
+public abstract class RScheme {
 
   /**
-   * Constructor
-   *
-   * @param schemeName the name of the underlying scheme to wrap
+   * A list of those schemes that are not available in MLR
    */
-  protected RScheme( String schemeName ) {
-    super( schemeName );
-  }
+  protected static List<String>
+      s_excludedSchemes =
+      Arrays.asList( "Naive Bayes incremental", "Naive Bayes multinomial", "Multi-layer perceptron classifier",
+          "Multi-layer perceptron regressor" );
 
   /**
    * Static factory method for obtaining a {@code Scheme} instance that encapsulates an MRL R implementation of the
@@ -58,7 +54,8 @@ public abstract class RScheme extends Scheme {
    * @throws Exception if a problem occurs
    */
   protected static Scheme getSupervisedRScheme( String schemeName ) throws Exception {
-    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes.contains( schemeName ) ) {
+    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes
+        .contains( schemeName ) ) {
       return new RClassifierScheme( schemeName );
     } else {
       // TODO clusterers?

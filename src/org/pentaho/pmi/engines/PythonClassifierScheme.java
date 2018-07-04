@@ -136,6 +136,10 @@ public class PythonClassifierScheme extends SupervisedScheme {
       m_pythonLearner = "RandomForestRegressor";
     } else if ( schemeName.equalsIgnoreCase( "Gradient boosted trees" ) ) {
       m_pythonLearner = "GradientBoostingClassifier";
+    } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) ) {
+      m_pythonLearner = "MLPClassifier";
+    } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
+      m_pythonLearner = "MLPRegressor";
     } else {
       throw new UnsupportedSchemeException( "Classification/regression scheme '" + schemeName + "' is unsupported" );
     }
@@ -235,6 +239,15 @@ public class PythonClassifierScheme extends SupervisedScheme {
     return false; // no python methods can be trained incrementally
   }
 
+  /**
+   * Returns true if the configured scheme can directly handle string attributes
+   *
+   * @return true if the configured scheme can directly handle string attributes
+   */
+  @Override public boolean canHandleStringAttributes() {
+    return false;
+  }
+
   @Override public Map<String, Object> getSchemeInfo() throws Exception {
     Map<String, Object> schemeMap = new LinkedHashMap<>();
     schemeMap.put( "topLevelClass", "weka.classifiers.sklearn.ScikitLearnClassifier" );
@@ -250,6 +263,7 @@ public class PythonClassifierScheme extends SupervisedScheme {
   protected void populatePropertiesFromScheme( Map<String, Map<String, Object>> propertyList ) throws WekaException {
     try {
       String learnerParams = getLearnerOptsFromScheme( m_scheme );
+      learnerParams = parentheticOptionWithCommasHack( learnerParams );
       if ( learnerParams != null && learnerParams.length() > 0 ) {
         String[] params = learnerParams.split( "," );
         for ( String param : params ) {
@@ -259,6 +273,9 @@ public class PythonClassifierScheme extends SupervisedScheme {
           }
           String name = parts[0].trim();
           String value = parts[1].trim();
+          if ( value.contains( "(" ) && value.contains( ")" ) ) {
+            value = value.replace( "*", "," );
+          }
           Map<String, Object> propMap = new LinkedHashMap<>();
           propMap.put( "name", name );
           propMap.put( "label", name );
@@ -274,10 +291,15 @@ public class PythonClassifierScheme extends SupervisedScheme {
     }
   }
 
+  protected String parentheticOptionWithCommasHack( String source ) {
+    return source.replaceAll( ",(?=[^()]*\\))", "*" );
+  }
+
   protected void addDefaultsForSchemeIfNecessary( Map<String, Map<String, Object>> propertyList ) throws WekaException {
     try {
       String defaults = getDefaultParametersForLearner( m_learnerEnumVal );
       defaults = defaults.replace( "\t", "" ).replace( "\n", "" );
+      defaults = parentheticOptionWithCommasHack( defaults );
       String[] params = defaults.split( "," );
       for ( String param : params ) {
         String[] parts = param.split( "=" );
@@ -288,6 +310,9 @@ public class PythonClassifierScheme extends SupervisedScheme {
         String value = parts[1].trim();
         if ( propertyList.containsKey( name ) ) {
           continue; // don't overwrite with a default value if already set!
+        }
+        if ( value.contains( "(" ) && value.contains( ")" ) ) {
+          value = value.replace( "*", "," );
         }
         Map<String, Object> propMap = new LinkedHashMap<>();
         propMap.put( "name", name );

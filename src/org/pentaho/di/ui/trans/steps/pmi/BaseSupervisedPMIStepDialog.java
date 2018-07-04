@@ -75,6 +75,7 @@ import org.pentaho.pmi.Scheme;
 import org.pentaho.pmi.SchemeUtils;
 import org.pentaho.pmi.UnsupportedEngineException;
 import weka.core.Attribute;
+import weka.core.OptionHandler;
 import weka.core.Utils;
 import weka.filters.Filter;
 import weka.filters.supervised.instance.Resample;
@@ -83,6 +84,7 @@ import weka.filters.unsupervised.attribute.RemoveUseless;
 import weka.filters.unsupervised.attribute.StringToWordVector;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,6 +93,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.pentaho.di.core.Const.MARGIN;
+import static org.pentaho.di.core.Const.getSharedObjectsFile;
 
 /**
  * Base dialog class for PMI classification and regression steps.
@@ -1187,11 +1190,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
           final Map<String, Object> propDetails = e.getValue();
           String tipText = (String) propDetails.get( "tip-text" );
           String type = (String) propDetails.get( "type" );
-          Object value = propDetails.get( "value" );
+          String propLabelText = (String) propDetails.get( "label" );
+          final Object value = propDetails.get( "value" );
 
           Label propLabel = new Label( m_schemeGroup, SWT.RIGHT );
           props.setLook( propLabel );
-          propLabel.setText( propName );
+          propLabel.setText( propLabelText );
           if ( !Const.isEmpty( tipText ) ) {
             propLabel.setToolTipText( tipText );
           }
@@ -1271,7 +1275,46 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
 
             lastControl = objectValEditBut;
           } else if ( type.equalsIgnoreCase( "array" ) ) {
-            // TODO
+            String arrayType = (String) propDetails.get( "array-type" );
+            Object objectValue = propDetails.get( "objectValue" );
+            if ( arrayType != null && arrayType.length() > 0 && arrayType.equalsIgnoreCase( "object" ) ) {
+              // just handle objects for now...
+              // value holds element type class : num elements in array
+              // objectValue holds the array itself
+
+              final Label arrayElementType = new Label( m_schemeGroup, SWT.RIGHT );
+              props.setLook( arrayElementType );
+              arrayElementType.setText( value.toString() + " : " + Array.getLength( objectValue ) );
+              arrayElementType.setLayoutData( getFirstPromptFormData( propLabel ) );
+
+              final Button arrayValEditBut = new Button( m_schemeGroup, SWT.PUSH );
+              props.setLook( arrayValEditBut );
+              arrayValEditBut.setText( "Edit..." );
+              arrayValEditBut.setLayoutData( getFirstGOEFormData( arrayElementType ) );
+
+              lastControl = arrayValEditBut;
+
+              arrayValEditBut.addSelectionListener( new SelectionAdapter() {
+                @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+                  super.widgetSelected( selectionEvent );
+                  arrayValEditBut.setEnabled( false );
+                  Object arrValue = propDetails.get( "objectValue" );
+                  try {
+                    GAEDialog
+                        dialog =
+                        new GAEDialog( shell, SWT.OK | SWT.CANCEL, arrValue, (Class<?>) value, transMeta );
+                    dialog.open();
+                    Object newArrValue = dialog.getArray();
+                    propDetails.put( "objectValue", newArrValue );
+                    arrayElementType.setText( value.toString() + " : " + Array.getLength( newArrValue ) );
+                  } catch ( Exception ex ) {
+                    ex.printStackTrace();
+                  } finally {
+                    arrayValEditBut.setEnabled( true );
+                  }
+                }
+              } );
+            }
           } else if ( type.equalsIgnoreCase( "pick-list" ) ) {
             String pickListValues = (String) propDetails.get( "pick-list-values" );
             String[] vals = pickListValues.split( "," );

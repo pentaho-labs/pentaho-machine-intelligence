@@ -64,7 +64,8 @@ public abstract class SupervisedScheme extends Scheme {
       s_defaultClassifierSchemeList =
       Arrays.asList( "Logistic regression", "Naive Bayes", "Naive Bayes multinomial", "Naive Bayes incremental",
           "Decision tree classifier", "Decision tree regressor", "Linear regression", "Support vector classifier",
-          "Support vector regressor", "Random forest classifier", "Random forest regressor", "Gradient boosted trees" );
+          "Support vector regressor", "Random forest classifier", "Random forest regressor", "Gradient boosted trees",
+          "Multi-layer perceptron classifier", "Multi-layer perceptron regressor", "Deep learning network" );
 
   /**
    * Additional scheme support from plugins. Scheme implementations from built-in engines would need to be modified to
@@ -164,7 +165,8 @@ public abstract class SupervisedScheme extends Scheme {
     }
 
     // Check to see if string attributes need to be dropped
-    if ( SchemeUtils.checkForAttributeType( incomingStructure, Attribute.STRING, true ) ) {
+    if ( !canHandleStringAttributes() && SchemeUtils
+        .checkForAttributeType( incomingStructure, Attribute.STRING, true ) ) {
       if ( !( result instanceof FilteredClassifier ) ) {
         result = new FilteredClassifier();
         ( (FilteredClassifier) result ).setClassifier( scheme );

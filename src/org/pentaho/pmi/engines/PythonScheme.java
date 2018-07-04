@@ -35,19 +35,12 @@ import java.util.List;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-public abstract class PythonScheme extends Scheme {
-
-  /** A list of those schemes that are not available in Python scikit-learn */
-  protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental" );
+public abstract class PythonScheme {
 
   /**
-   * Constructor
-   *
-   * @param schemeName the name of the underlying scheme
+   * A list of those schemes that are not available in Python scikit-learn
    */
-  public PythonScheme( String schemeName ) {
-    super( schemeName );
-  }
+  protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental" );
 
   /**
    * Static factory method for obtaining a {@code Scheme} instance that encapsulates a scikit-learn implementation of
@@ -58,7 +51,8 @@ public abstract class PythonScheme extends Scheme {
    * @throws Exception if a problem occurs
    */
   protected static Scheme getSupervisedPythonScheme( String schemeName ) throws Exception {
-    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes.contains( schemeName ) ) {
+    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes
+        .contains( schemeName ) ) {
       return new PythonClassifierScheme( schemeName );
     } else {
       // TODO clusterers?

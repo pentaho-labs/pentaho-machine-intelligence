@@ -20,35 +20,18 @@
  * <p/>
  ******************************************************************************/
 
-package org.pentaho.pmi.engines;
+package org.pentaho.di.trans.steps.pmi;
 
-import org.pentaho.pmi.Scheme;
-import org.pentaho.pmi.SupervisedScheme;
-import org.pentaho.pmi.UnsupportedSchemeException;
+import org.pentaho.di.core.annotations.Step;
 
 /**
- * Scheme implementation for WEKA.
- *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-public abstract class WekaScheme {
+@Step( id = "PMIMultiLayerPerceptronClassifier", image = "WEKAS.svg", name = "PMI Multi-layer Perceptron Classifier", description = "Train and evaluate a multi-layer perceptron classification model", categoryDescription = "Data Mining" )
+public class PMIMultiLayerPerceptronClassifier extends BaseSupervisedPMIStepMeta {
 
-  /**
-   * Static factory method for obtaining a {@code Scheme} instance that encapsulates a WEKA implementation of the
-   * named scheme.
-   *
-   * @param schemeName the name of the scheme to get
-   * @return a {@code Scheme} object
-   * @throws UnsupportedSchemeException if a problem occurs
-   */
-  protected static Scheme getSupervisedWekaScheme( String schemeName ) throws UnsupportedSchemeException {
-    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) ) {
-      return new WekaClassifierScheme( schemeName );
-    } else {
-      // TODO other types of schemes - clusterers etc.
-    }
-
-    return null;
+  public PMIMultiLayerPerceptronClassifier() {
+    setSchemeName( "Multi-layer perceptron classifier" );
   }
 }

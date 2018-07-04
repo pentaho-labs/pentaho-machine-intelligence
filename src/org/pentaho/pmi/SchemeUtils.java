@@ -415,7 +415,7 @@ public class SchemeUtils {
         Class<?> elementType = getter.getReturnType().getComponentType();
         String typeC = elementType.getCanonicalName();
         int numElements = Array.getLength( value );
-        propertyMap.put( "value", typeC + " : " + numElements );
+        propertyMap.put( "value", elementType); // the actual class of the array element
         propertyMap.put( "objectValue", value ); // actual underlying array value
       } else if ( editor instanceof GenericObjectEditor ) {
         String schName = getTextRepresentationOfObjectValue( value );

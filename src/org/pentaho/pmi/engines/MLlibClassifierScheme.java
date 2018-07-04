@@ -139,6 +139,15 @@ public class MLlibClassifierScheme extends SupervisedScheme {
   }
 
   /**
+   * Returns true if the configured scheme can directly handle string attributes
+   *
+   * @return true if the configured scheme can directly handle string attributes
+   */
+  @Override public boolean canHandleStringAttributes() {
+    return false;
+  }
+
+  /**
    * Get a map of meta information about the scheme and its parameters, useful for building editor dialogs
    *
    * @return a map of meta information about the scheme and its parameters

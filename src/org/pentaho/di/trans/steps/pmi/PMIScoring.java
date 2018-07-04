@@ -168,7 +168,8 @@ public class PMIScoring extends BaseStep implements StepInterface {
     Object[] r = getRow();
 
     if ( r == null ) {
-      if ( m_data.getModel().isBatchPredictor() && !m_meta.getFileNameFromField() && m_batch.size() > 0 ) {
+      if ( !m_meta.getEvaluateRatherThanScore() && m_data.getModel().isBatchPredictor() && !m_meta
+          .getFileNameFromField() && m_batch.size() > 0 ) {
         try {
           outputBatchRows();
         } catch ( Exception ex ) {
@@ -332,8 +333,7 @@ public class PMIScoring extends BaseStep implements StepInterface {
       // Determine the output format
       m_meta.getFields( m_data.getOutputRowMeta(), getStepname(), null, null, this );
 
-      if ( !Const.isEmpty( m_meta.getBatchScoringSize() ) && ( (BatchPredictor) m_meta.getModel() )
-          .implementsMoreEfficientBatchPrediction() ) {
+      if ( !Const.isEmpty( m_meta.getBatchScoringSize() ) && m_meta.getModel().isBatchPredictor() ) {
         try {
           String bss = environmentSubstitute( m_meta.getBatchScoringSize() );
           m_batchScoringSize = Integer.parseInt( bss );

@@ -35,23 +35,15 @@ import java.util.List;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-public abstract class MLlibScheme extends Scheme {
+public abstract class MLlibScheme {
 
   /**
-   * A list of those global schemes that are not supported in Spark MLlib
+   * A list of those global schemes that are not supported in Spark MLlib 1.6
    */
   protected static List<String>
       s_excludedSchemes =
-      Arrays.asList( "Naive Bayes incremental", "Support vector regression" );
-
-  /**
-   * Constructor
-   *
-   * @param schemeName the name of the scheme
-   */
-  public MLlibScheme( String schemeName ) {
-    super( schemeName );
-  }
+      Arrays.asList( "Naive Bayes incremental", "Support vector regression", "Multi-layer perceptron classifier",
+          "Multi-layer perceptron regressor" );
 
   /**
    * Static factory method for obtaining {@code Scheme} objects encapsulating particular MLlib implementations
@@ -61,7 +53,8 @@ public abstract class MLlibScheme extends Scheme {
    * @throws Exception if a problem occurs
    */
   public static Scheme getSupervisedMLlibScheme( String schemeName ) throws Exception {
-    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes.contains( schemeName ) ) {
+    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes
+        .contains( schemeName ) ) {
       return new MLlibClassifierScheme( schemeName );
     } else {
       // TODO MLlib package does not provide clusterers yet

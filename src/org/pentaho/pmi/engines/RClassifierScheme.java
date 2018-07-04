@@ -63,17 +63,19 @@ public class RClassifierScheme extends SupervisedScheme {
    */
   protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental" );
 
-  protected static final int R_CLASSIF_LIBLINEARL1LOGREG = 33; // L1 regularized
-  protected static final int R_CLASSIF_LIBLINEARL2LOGREG = 35; // L2 regularized
-  protected static final int R_CLASSIF_NAIVE_BAYES = 46;
-  protected static final int R_CLASSIF_RPART = 67;
-  protected static final int R_REGR_RPART = 129;
-  protected static final int R_REGR_LM = 115;
-  protected static final int R_CLASSIF_SVM = 73;
-  protected static final int R_REGR_SVM = 134;
-  protected static final int R_CLASSIF_RANDOM_FOREST = 60;
-  protected static final int R_REGR_RANDOM_FOREST = 125;
-  protected static final int R_CLASSIF_GBM = 20;
+  protected static final String R_CLASSIF_LIBLINEARL1LOGREG = "classif.LiblineaRL1LogReg"; // L1 regularized
+  protected static final String R_CLASSIF_LIBLINEARL2LOGREG = "classif.LiblineaRL2LogReg"; // L2 regularized
+  protected static final String R_CLASSIF_NAIVE_BAYES = "classif.naiveBayes";
+  protected static final String R_CLASSIF_RPART = "classif.rpart";
+  protected static final String R_REGR_RPART = "regr.rpart";
+  protected static final String R_REGR_LM = "regr.rpart";
+  protected static final String R_CLASSIF_SVM = "classif.svm";
+  protected static final String R_REGR_SVM = "regr.svm";
+  protected static final String R_CLASSIF_RANDOM_FOREST = "classif.randomForest";
+  protected static final String R_REGR_RANDOM_FOREST = "regr.randomForest";
+  protected static final String R_CLASSIF_GBM = "classif.gbm";
+  protected static final String R_CLASSIF_NNET = "classif.nnet";
+  protected static final String R_REGR_NNET = "classif.nnet";
 
   protected static Tag[] TAGS_LEARNER;
 
@@ -82,8 +84,7 @@ public class RClassifierScheme extends SupervisedScheme {
    */
   protected Classifier m_scheme;
 
-  // protected String m_mlrLearner = "";
-  protected int m_mlrLearner = R_CLASSIF_LIBLINEARL1LOGREG;
+  protected Tag m_mlrLearner;
 
   /**
    * Constructor
@@ -112,33 +113,54 @@ public class RClassifierScheme extends SupervisedScheme {
     TAGS_LEARNER = (Tag[]) tagsField.get( null );
 
     if ( schemeName.equals( "Logistic regression" ) ) {
-      m_mlrLearner = R_CLASSIF_LIBLINEARL1LOGREG;
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_LIBLINEARL1LOGREG );
     } else if ( schemeName.equalsIgnoreCase( "Naive Bayes" ) ) {
-      m_mlrLearner = R_CLASSIF_NAIVE_BAYES;
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_NAIVE_BAYES );
     } else if ( schemeName.equalsIgnoreCase( "Naive Bayes multinomial" ) ) {
       throw new UnsupportedSchemeException(
           "The R engine (MLR) does not support the naive Bayes multinomial classifier" );
     } else if ( schemeName.equalsIgnoreCase( "Decision tree classifier" ) ) {
-      m_mlrLearner = R_CLASSIF_RPART;
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_RPART );
     } else if ( schemeName.equalsIgnoreCase( "Decision tree regressor" ) ) {
-      m_mlrLearner = R_REGR_RPART;
+      m_mlrLearner = findApplicableTagForScheme( R_REGR_RPART );
     } else if ( schemeName.equalsIgnoreCase( "Linear regression" ) ) {
-      m_mlrLearner = R_REGR_LM;
+      m_mlrLearner = findApplicableTagForScheme( R_REGR_LM );
     } else if ( schemeName.equalsIgnoreCase( "Support vector classifier" ) ) {
-      m_mlrLearner = R_CLASSIF_SVM;
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_SVM );
     } else if ( schemeName.equalsIgnoreCase( "Support vector regressor" ) ) {
-      m_mlrLearner = R_REGR_SVM;
+      m_mlrLearner = findApplicableTagForScheme( R_REGR_SVM );
     } else if ( schemeName.equalsIgnoreCase( "Random forest classifier" ) ) {
-      m_mlrLearner = R_CLASSIF_RANDOM_FOREST;
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_RANDOM_FOREST );
     } else if ( schemeName.equalsIgnoreCase( "Random forest regressor" ) ) {
-      m_mlrLearner = R_REGR_RANDOM_FOREST;
+      m_mlrLearner = findApplicableTagForScheme( R_REGR_RANDOM_FOREST );
     } else if ( schemeName.equalsIgnoreCase( "Gradient boosted trees" ) ) {
-      m_mlrLearner = R_CLASSIF_GBM;
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_GBM );
+    } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) ) {
+      m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_NNET );
+    } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
+      m_mlrLearner = findApplicableTagForScheme( R_REGR_NNET );
     } else {
       throw new UnsupportedSchemeException( "Classification/regression scheme '" + schemeName + "' is unsupported" );
     }
 
-    setLearnerOnScheme( m_scheme, m_mlrLearner );
+    setLearnerOnScheme( m_scheme, m_mlrLearner.getID() );
+  }
+
+  protected Tag findApplicableTagForScheme( String readableRPackage ) throws WekaException {
+    Tag result = null;
+
+    for ( Tag t : TAGS_LEARNER ) {
+      if ( t.getReadable().equalsIgnoreCase( readableRPackage ) ) {
+        result = t;
+        break;
+      }
+    }
+
+    if ( result == null ) {
+      throw new WekaException( "Unable to find appropriate MLR learner tag for " + readableRPackage );
+    }
+
+    return result;
   }
 
   protected void setLearnerOnScheme( Classifier mlrClassifier, int schemeConst )
@@ -185,6 +207,15 @@ public class RClassifierScheme extends SupervisedScheme {
   }
 
   /**
+   * Returns true if the configured scheme can directly handle string attributes
+   *
+   * @return true if the configured scheme can directly handle string attributes
+   */
+  @Override public boolean canHandleStringAttributes() {
+    return false;
+  }
+
+  /**
    * Get a map of meta information about the scheme and its parameters, useful for building editor dialogs
    *
    * @return a map of meta information about the scheme and its parameters
@@ -208,7 +239,8 @@ public class RClassifierScheme extends SupervisedScheme {
       if ( learnerParams != null && learnerParams.length() > 0 ) {
         paramParts = learnerParams.split( "," );
       }
-      if ( m_mlrLearner == R_CLASSIF_LIBLINEARL1LOGREG || m_mlrLearner == R_CLASSIF_LIBLINEARL2LOGREG ) {
+      if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) || m_mlrLearner.getReadable()
+          .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) ) {
         Map<String, Object> propMap = new LinkedHashMap<>();
         propMap.put( "name", "Use L2 regularization" );
         propMap.put( "label", "Use L2 regularization" );
@@ -216,10 +248,10 @@ public class RClassifierScheme extends SupervisedScheme {
         propMap.put( "rProp", true );
         propMap.put( "meta-prop", true );
         propMap.put( "type", "boolean" );
-        propMap.put( "value", m_mlrLearner != R_CLASSIF_LIBLINEARL1LOGREG );
+        propMap.put( "value", !m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) );
 
         propertyList.put( "Use L2 regularization", propMap );
-      } else if ( m_mlrLearner == R_CLASSIF_NAIVE_BAYES ) {
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_NAIVE_BAYES ) ) {
         Map<String, Object> propMap = new LinkedHashMap<>();
         addIndividualRLearnerPropToMap( propMap, "Laplace", "Laplace", "Laplace adjustment to use " + "(default = 0)",
             true, false, "string", null, learnerParams, "laplace", "0" );
@@ -233,9 +265,10 @@ public class RClassifierScheme extends SupervisedScheme {
         String laplaceValue = getLearnerParamValueSimple( paramParts, "laplace" );
         propMap.put( "value", laplaceValue != null ? laplaceValue : "0" );
         propertyList.put( "Laplace", propMap );
-      } else if ( m_mlrLearner == R_CLASSIF_RPART || m_mlrLearner == R_REGR_RPART ) {
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_RPART ) || m_mlrLearner.getReadable()
+          .equalsIgnoreCase( R_REGR_RPART ) ) {
         Map<String, Object> propMap = new LinkedHashMap<>();
-        if ( m_mlrLearner == R_CLASSIF_RPART ) {
+        if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_RPART ) ) {
           propMap.put( "name", "Prior" );
           propMap.put( "label", "Prior" );
           propMap.put( "tip-text", "Prior class probabilities (comma separated; must sum to 1)" );
@@ -348,14 +381,15 @@ public class RClassifierScheme extends SupervisedScheme {
             null, learnerParams, "maxdepth", "" );
         propertyList.put( "Max depth", propMap );
 
-      } else if ( m_mlrLearner == R_REGR_LM ) {
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_LM ) ) {
         // no parameters for lm!
-      } else if ( m_mlrLearner == R_CLASSIF_SVM || m_mlrLearner == R_REGR_SVM ) {
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_SVM ) || m_mlrLearner.getReadable()
+          .equalsIgnoreCase( R_REGR_SVM ) ) {
         Map<String, Object> propMap = new LinkedHashMap<>();
         addIndividualRLearnerPropToMap( propMap, "Type", "Type", "Type of SVM (default = C-classification", true, false,
-            "pick-list",
-            m_mlrLearner == R_CLASSIF_SVM ? "C-classification,nu-classification" : "eps-regression,nu-regression",
-            learnerParams, "type", m_mlrLearner == R_CLASSIF_SVM ? "C-classification" : "eps-regression" );
+            "pick-list", m_mlrLearner.getReadable().equals( R_CLASSIF_SVM ) ? "C-classification,nu-classification" :
+                "eps-regression,nu-regression", learnerParams, "type",
+            m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_SVM ) ? "C-classification" : "eps-regression" );
         propertyList.put( "Type", propMap );
 
         propMap = new LinkedHashMap<>();
@@ -404,7 +438,7 @@ public class RClassifierScheme extends SupervisedScheme {
             "tolerance", "0.001" );
         propertyList.put( "Tolearance", propMap );
 
-        if ( m_mlrLearner == R_REGR_SVM ) {
+        if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_SVM ) ) {
           propMap = new LinkedHashMap<>();
           addIndividualRLearnerPropToMap( propMap, "Epsilon", "Epsilon",
               "Epsilon in the insensitive-loss function (default=0.1)", true, false, "string", null, learnerParams,
@@ -430,7 +464,8 @@ public class RClassifierScheme extends SupervisedScheme {
             "Logical indicating whether the fitted values should be computed and included in the model or "
                 + "not (default = TRUE)", true, false, "boolean", null, learnerParams, "fitted", true );
         propertyList.put( "Fitted", propMap );
-      } else if ( m_mlrLearner == R_CLASSIF_RANDOM_FOREST || m_mlrLearner == R_REGR_RANDOM_FOREST ) {
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_RANDOM_FOREST ) || m_mlrLearner.getReadable()
+          .equalsIgnoreCase( R_REGR_RANDOM_FOREST ) ) {
         Map<String, Object> propMap = new LinkedHashMap<>();
         addIndividualRLearnerPropToMap( propMap, "Number of trees", "Number of trees",
             "Number of trees to grow. his should not be set to too small a number, to ensure that every input row gets predicted at least a few times.",
@@ -460,7 +495,7 @@ public class RClassifierScheme extends SupervisedScheme {
         addIndividualRLearnerPropToMap( propMap, "Node size", "Node size",
             "Minimum size of terminal nodes. Setting this to a larger number causes smaller trees to be grown (and thus take less time).",
             true, false, "string", null, learnerParams, "nodesize",
-            m_mlrLearner == R_CLASSIF_RANDOM_FOREST ? "1" : "5" );
+            m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_RANDOM_FOREST ) ? "1" : "5" );
         propertyList.put( "Node size", propMap );
 
         propMap = new LinkedHashMap<>();
@@ -469,7 +504,7 @@ public class RClassifierScheme extends SupervisedScheme {
                 + " maximum possible (subject to limits by Node size). If set larger than maximum possible, a warning is"
                 + " issued.", true, false, "string", null, learnerParams, "maxnodes", "" );
         propertyList.put( "Max nodes", propMap );
-      } else if ( m_mlrLearner == R_CLASSIF_GBM ) {
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_GBM ) ) {
         Map<String, Object> propMap = new LinkedHashMap<>();
         addIndividualRLearnerPropToMap( propMap, "Number of trees", "Number of trees",
             "The total number of trees to fit. This is equivalent to the number of iterations.", true, false, "string",
@@ -510,32 +545,36 @@ public class RClassifierScheme extends SupervisedScheme {
   protected void setRLearnerOptions( Map<String, Map<String, Object>> parameters ) throws WekaException {
     StringBuilder b = new StringBuilder();
 
-    if ( m_mlrLearner == R_CLASSIF_LIBLINEARL1LOGREG || m_mlrLearner == R_CLASSIF_LIBLINEARL2LOGREG ) {
+    if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) || m_mlrLearner.getReadable()
+        .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) ) {
       Map<String, Object> regularizationProp = parameters.get( "Use L2 regularization" );
       if ( regularizationProp != null ) {
         Boolean value = regularizationProp.get( "value" ).toString().equalsIgnoreCase( "true" );
 
-        if ( m_mlrLearner == R_CLASSIF_LIBLINEARL1LOGREG && value != null && value ) {
+        if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) && value != null && value ) {
           // switch to L2 version
-          m_mlrLearner = R_CLASSIF_LIBLINEARL2LOGREG;
-        } else if ( m_mlrLearner == R_CLASSIF_LIBLINEARL2LOGREG && ( value == null || !value ) ) {
+          m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_LIBLINEARL2LOGREG );
+        } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) && ( value == null
+            || !value ) ) {
           // switch to L1 version
-          m_mlrLearner = R_CLASSIF_LIBLINEARL1LOGREG;
+          m_mlrLearner = findApplicableTagForScheme( R_CLASSIF_LIBLINEARL1LOGREG );
         }
       }
-    } else if ( m_mlrLearner == R_CLASSIF_NAIVE_BAYES ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_NAIVE_BAYES ) ) {
       assembleRLearnerOptionsSimpleList( parameters, b, new ArrayList<String>() );
-    } else if ( m_mlrLearner == R_CLASSIF_RPART ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_RPART ) ) {
       assembleRLearnerOptionsRPart( parameters, b, false );
-    } else if ( m_mlrLearner == R_REGR_RPART ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_RPART ) ) {
       assembleRLearnerOptionsRPart( parameters, b, true );
-    } else if ( m_mlrLearner == R_REGR_LM ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_LM ) ) {
       // Nothing to do for lm!
-    } else if ( m_mlrLearner == R_CLASSIF_SVM || m_mlrLearner == R_REGR_SVM ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_SVM ) || m_mlrLearner.getReadable()
+        .equalsIgnoreCase( R_REGR_SVM ) ) {
       assembleRLearnerOptionsSimpleList( parameters, b, Arrays.asList( "type", "kernel" ) );
-    } else if ( m_mlrLearner == R_CLASSIF_RANDOM_FOREST || m_mlrLearner == R_REGR_RANDOM_FOREST ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_RANDOM_FOREST ) || m_mlrLearner.getReadable()
+        .equalsIgnoreCase( R_REGR_RANDOM_FOREST ) ) {
       assembleRLearnerOptionsSimpleList( parameters, b, new ArrayList<String>() );
-    } else if ( m_mlrLearner == R_CLASSIF_GBM ) {
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_GBM ) ) {
       assembleRLearnerOptionsSimpleList( parameters, b, new ArrayList<String>() );
     }
 
@@ -707,12 +746,13 @@ public class RClassifierScheme extends SupervisedScheme {
    */
   @Override public void setSchemeOptions( String[] options ) throws Exception {
     if ( m_scheme != null ) {
-      if ( m_mlrLearner == R_CLASSIF_LIBLINEARL1LOGREG ) {
+      if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) ) {
         // check for the meta option for L2 regularization
         try {
           if ( Utils.getFlag( "meta-l2", options ) ) {
-            setLearnerOnScheme( m_scheme, R_CLASSIF_LIBLINEARL2LOGREG );
-            m_mlrLearner = R_CLASSIF_LIBLINEARL2LOGREG;
+            Tag tempTag = findApplicableTagForScheme( R_CLASSIF_LIBLINEARL2LOGREG );
+            setLearnerOnScheme( m_scheme, tempTag.getID() );
+            m_mlrLearner = tempTag;
           }
         } catch ( Exception e ) {
           e.printStackTrace();
@@ -744,7 +784,7 @@ public class RClassifierScheme extends SupervisedScheme {
     if ( m_scheme != null ) {
       String[] schemeOpts = ( (OptionHandler) m_scheme ).getOptions();
       List<String> opts = new ArrayList<>( Arrays.asList( schemeOpts ) );
-      if ( m_mlrLearner == R_CLASSIF_LIBLINEARL2LOGREG ) {
+      if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) ) {
         // add the meta option for L2 regularization
         opts.add( "-meta-l2" );
       }
@@ -780,7 +820,8 @@ public class RClassifierScheme extends SupervisedScheme {
    */
   @Override public Object getConfiguredScheme( Instances trainingHeader ) throws Exception {
     Classifier finalScheme = adjustForSamplingAndPreprocessing( trainingHeader, m_scheme );
-    if ( m_mlrLearner == R_CLASSIF_LIBLINEARL1LOGREG || m_mlrLearner == R_CLASSIF_LIBLINEARL2LOGREG ) {
+    if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) || m_mlrLearner.getReadable()
+        .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) ) {
       boolean removeUselessInPlay = checkForFilter( finalScheme, ".RemoveUseless" );
       if ( !( finalScheme instanceof FilteredClassifier ) ) {
         finalScheme = new FilteredClassifier();
