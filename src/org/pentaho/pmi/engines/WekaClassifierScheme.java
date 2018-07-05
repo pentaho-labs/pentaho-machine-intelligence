@@ -165,6 +165,13 @@ public class WekaClassifierScheme extends SupervisedScheme {
     } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) || schemeName
         .equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
       m_underlyingScheme = new MultilayerPerceptron();
+    } else if ( schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
+      try {
+        m_underlyingScheme =
+            (Classifier) WekaPackageClassLoaderManager.objectForName( "weka.classifiers.functions.Dl4jMlpClassifier" );
+      } catch ( Exception e ) {
+        throw new UnsupportedSchemeException( e );
+      }
     } else {
       throw new UnsupportedSchemeException(
           "Classification/regression scheme '" + schemeName + "' is unsupported in Weka" );
@@ -225,6 +232,13 @@ public class WekaClassifierScheme extends SupervisedScheme {
    * @return true if the configured scheme can directly handle string attributes
    */
   @Override public boolean canHandleStringAttributes() {
+    if ( getSchemeName().equalsIgnoreCase( "Deep learning network" ) ) {
+
+      // TODO really need to make a reflective call to see if the instance iterator is an
+      // ImageInstanceIterator or a text-related iterator. This is the only time that string attributes
+      // can be handled directly
+      return true;
+    }
     return false;
   }
 

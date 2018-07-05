@@ -43,7 +43,7 @@ public abstract class RScheme {
   protected static List<String>
       s_excludedSchemes =
       Arrays.asList( "Naive Bayes incremental", "Naive Bayes multinomial", "Multi-layer perceptron classifier",
-          "Multi-layer perceptron regressor" );
+          "Multi-layer perceptron regressor", "Deep learning network" );
 
   /**
    * Static factory method for obtaining a {@code Scheme} instance that encapsulates an MRL R implementation of the

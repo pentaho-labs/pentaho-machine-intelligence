@@ -139,6 +139,19 @@ public class PMILifecycleListener implements KettleLifecycleListener {
               .installPackageFromRepository( "netlibNativeLinux", latestCompatibleVersion, System.out );
         }
       }
+
+      // DL4j dependency. The latest version of wekaDl4j comes with CPU support and instructions on how to
+      // install GPU support
+      weka.core.packageManagement.Package
+          dl4jPackage =
+          weka.core.WekaPackageManager.getInstalledPackageInfo( "wekaDeeplearning4j" );
+      if ( dl4jPackage == null ) {
+        String latestCompatibleVersion = getLatestVersion( "wekaDeeplearning4j" );
+        System.out.println( "[PMI] wekaDeeplearning4j package is not installed - attempting to install version "
+            + latestCompatibleVersion );
+        weka.core.WekaPackageManager
+            .installPackageFromRepository( "wekaDeeplearning4j", latestCompatibleVersion, System.out );
+      }
     } catch ( Exception e ) {
       e.printStackTrace();
     }
