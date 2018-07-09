@@ -203,7 +203,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
   protected Map<String, Classifier> m_incrementalClassifier;
   // protected Classifier m_incrementalClassifier;
 
-  protected void checkForIncrementalTraining( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log ) throws Exception {
+  protected void checkForIncrementalTraining( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log )
+      throws Exception {
     m_trainingIncrementally =
         m_scheme.supportsIncrementalTraining() && ( stepMeta.getEvalMode() == Evaluator.EvalMode.NONE
             || stepMeta.getEvalMode() == Evaluator.EvalMode.SEPARATE_TEST_SET
@@ -267,8 +268,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     }
   }
 
-  protected void checkAllIncrementalHeaderCreationAndClearCache( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log )
-      throws Exception {
+  protected void checkAllIncrementalHeaderCreationAndClearCache( BaseSupervisedPMIStepMeta stepMeta,
+      LogChannelInterface log ) throws Exception {
     for ( Map.Entry<String, List<Object[]>> e : m_initialIncrementalRows.entrySet() ) {
       String stratVal = e.getKey();
       List<Object[]> rowsForStratVal = e.getValue();
@@ -276,8 +277,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     }
   }
 
-  protected void checkIncrementalHeaderCreationAndClearCache( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log,
-      String stratVal, List<Object[]> rowsForStratVal ) throws Exception {
+  protected void checkIncrementalHeaderCreationAndClearCache( BaseSupervisedPMIStepMeta stepMeta,
+      LogChannelInterface log, String stratVal, List<Object[]> rowsForStratVal ) throws Exception {
     if ( rowsForStratVal.size() > 0 ) {
       // clear buffered instances first...
 
@@ -326,8 +327,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return result;
   }
 
-  protected Object[][] outputRowIncremental( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log, VariableSpace vars )
-      throws KettleException {
+  protected Object[][] outputRowIncremental( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log,
+      VariableSpace vars ) throws KettleException {
     Object[][] result = null;
 
     // done so get eval row (if necessary)
@@ -368,8 +369,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return result;
   }
 
-  protected Object[][] handleIncrementalTrainingRow( Object[] row, BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log,
-      VariableSpace vars ) throws Exception {
+  protected Object[][] handleIncrementalTrainingRow( Object[] row, BaseSupervisedPMIStepMeta stepMeta,
+      LogChannelInterface log, VariableSpace vars ) throws Exception {
 
     Object[][] result = null;
     if ( row == null ) {
@@ -525,8 +526,9 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return evaluationOutputRow;
   }
 
-  protected Object[] processTrainingBatch( List<Object[]> data, String stratificationValue, BaseSupervisedPMIStepMeta stepMeta,
-      String relationName, LogChannelInterface log, VariableSpace vars ) throws KettleException {
+  protected Object[] processTrainingBatch( List<Object[]> data, String stratificationValue,
+      BaseSupervisedPMIStepMeta stepMeta, String relationName, LogChannelInterface log, VariableSpace vars )
+      throws KettleException {
 
     Object[] outputRow = null;
     if ( data.size() > 0 ) {
@@ -581,7 +583,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
         // build final model on all the data (but only if it is going to be saved somewhere or separate test set eval or there is no eval being done)
         if ( !Const.isEmpty( m_modelOutputPath ) || stepMeta.getEvalMode() == Evaluator.EvalMode.SEPARATE_TEST_SET
             || stepMeta.getEvalMode() == Evaluator.EvalMode.NONE ) {
-          Classifier trainedFullModel = evaluator.buildFinalModel();
+          Classifier trainedFullModel = evaluator.buildFinalModel( log );
           m_finalModels.put( evalKey, trainedFullModel );
 
           // save model to file
@@ -605,8 +607,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return outputRow;
   }
 
-  protected List<Object[]> handleSeparateTestRow( Object[] row, BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log,
-      VariableSpace vars ) throws KettleException {
+  protected List<Object[]> handleSeparateTestRow( Object[] row, BaseSupervisedPMIStepMeta stepMeta,
+      LogChannelInterface log, VariableSpace vars ) throws KettleException {
 
     if ( m_rowHandlingMode == Batch ) {
       throw new KettleException(
@@ -765,8 +767,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     }
   }
 
-  protected void saveModel( Classifier model, Instances header, BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log )
-      throws KettleException {
+  protected void saveModel( Classifier model, Instances header, BaseSupervisedPMIStepMeta stepMeta,
+      LogChannelInterface log ) throws KettleException {
     if ( Const.isEmpty( m_modelOutputPath ) ) {
       return;
     }
@@ -882,8 +884,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return result;
   }
 
-  protected Instances determineHeader( List<Object[]> trainingRows, String relationName, BaseSupervisedPMIStepMeta stepMeta )
-      throws KettleException {
+  protected Instances determineHeader( List<Object[]> trainingRows, String relationName,
+      BaseSupervisedPMIStepMeta stepMeta ) throws KettleException {
     ArrayList<Attribute> atts = new ArrayList<>();
 
     List<ArffMeta> arffFields = stepMeta.getFieldMetadata();
