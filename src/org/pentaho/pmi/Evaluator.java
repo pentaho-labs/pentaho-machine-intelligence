@@ -252,13 +252,14 @@ public class Evaluator {
     }
     if ( m_evaluationMode == EvalMode.PERCENTAGE_SPLIT ) {
       if ( m_trainingData.numInstances() < 10 ) {
-        log.logBasic(
-            BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.UnableToPerformPercentageSplit" ) );
+        log.logBasic( BaseMessages
+            .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.UnableToPerformPercentageSplit" ) );
         m_evalWasPerformed = false;
         return;
       }
       log.logBasic( BaseMessages
-          .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.PerformingPercentageSplit", m_percentageSplit ) );
+          .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.PerformingPercentageSplit",
+              m_percentageSplit ) );
       int trainSize = (int) Math.round( m_trainingData.numInstances() * m_percentageSplit / 100 );
       int testSize = m_trainingData.numInstances() - trainSize;
 
@@ -282,21 +283,21 @@ public class Evaluator {
         m_evalWasPerformed = false;
         return;
       }
-      log.logBasic(
-          BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.PerformingCrossValidation", m_xValFolds ) );
+      log.logBasic( BaseMessages
+          .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.PerformingCrossValidation", m_xValFolds ) );
       if ( !m_preserveOrder && m_trainingData.classAttribute().isNominal() ) {
         m_trainingData.stratify( m_xValFolds );
       }
       for ( int i = 0; i < m_xValFolds; i++ ) {
-        log.logDetailed(
-            BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.TrainingModelForFold", ( i + 1 ) ) );
+        log.logDetailed( BaseMessages
+            .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.TrainingModelForFold", ( i + 1 ) ) );
         Classifier foldClassifier = copyClassifierTemplate();
-        Instances train = m_trainingData.trainCV( 10, i, r );
+        Instances train = m_trainingData.trainCV( m_xValFolds, i, r );
         m_eval.setPriors( train );
         foldClassifier.buildClassifier( train );
-        Instances test = m_trainingData.testCV( 10, i );
-        log.logDetailed(
-            BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.TestingModelForFold", ( i + 1 ) ) );
+        Instances test = m_trainingData.testCV( m_xValFolds, i );
+        log.logDetailed( BaseMessages
+            .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.TestingModelForFold", ( i + 1 ) ) );
 
         if ( m_templateClassifier instanceof BatchPredictor && ( (BatchPredictor) m_templateClassifier )
             .implementsMoreEfficientBatchPrediction() ) {
@@ -324,14 +325,14 @@ public class Evaluator {
       }
     } else if ( m_evaluationMode == EvalMode.SEPARATE_TEST_SET && separateTestData != null ) {
       if ( separateTestData.numInstances() == 0 ) {
-        log.logBasic(
-            BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.UnableToPerformSeparateTestSetEval" ) );
+        log.logBasic( BaseMessages
+            .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.UnableToPerformSeparateTestSetEval" ) );
         m_evalWasPerformed = false;
         return;
       }
       if ( m_classifier == null ) {
-        throw new IllegalStateException(
-            BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.FinalClassifierHasNotBeenTrainedYet" ) );
+        throw new IllegalStateException( BaseMessages
+            .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.FinalClassifierHasNotBeenTrainedYet" ) );
       }
       // log.logBasic( "Performing separate test set evaluation..." );
       if ( m_computeAUC || ( m_templateClassifier instanceof BatchPredictor && ( (BatchPredictor) m_templateClassifier )
@@ -360,8 +361,8 @@ public class Evaluator {
 
     if ( m_templateClassifier instanceof BatchPredictor && ( (BatchPredictor) m_templateClassifier )
         .implementsMoreEfficientBatchPrediction() ) {
-      throw new Exception(
-          BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.IncrementalEvalOnlyOnTestOrTrainingData" ) );
+      throw new Exception( BaseMessages
+          .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.IncrementalEvalOnlyOnTestOrTrainingData" ) );
     }
 
     if ( m_computeAUC ) {
@@ -374,10 +375,11 @@ public class Evaluator {
   /**
    * Build a final model using all of the available training data.
    *
+   * @param log the log to write to
    * @return a final model
    * @throws Exception if a problem occurs
    */
-  public Classifier buildFinalModel() throws Exception {
+  public Classifier buildFinalModel( LogChannelInterface log ) throws Exception {
 
     if ( m_trainingData == null ) {
       throw new IllegalStateException(
@@ -385,6 +387,12 @@ public class Evaluator {
     }
 
     m_classifier = copyClassifierTemplate();
+    if ( log != null ) {
+      log.logBasic( BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "BasePMIStep.Info.BuildingFinalModel",
+          m_classifier.getClass().getCanonicalName() + " " + Utils
+              .joinOptions( ( (OptionHandler) m_classifier ).getOptions() ) ) );
+    }
+
     m_classifier.buildClassifier( m_trainingData );
 
     return m_classifier;
