@@ -389,7 +389,8 @@ public class Evaluator {
     m_classifier = copyClassifierTemplate();
     if ( log != null ) {
       log.logBasic( BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "BasePMIStep.Info.BuildingFinalModel",
-          m_classifier.getClass().getCanonicalName() ) );
+          m_classifier.getClass().getCanonicalName() + " " + Utils
+              .joinOptions( ( (OptionHandler) m_classifier ).getOptions() ) ) );
     }
 
     m_classifier.buildClassifier( m_trainingData );

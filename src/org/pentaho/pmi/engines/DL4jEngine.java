@@ -1,5 +1,10 @@
-package org.pentaho.pmi;
+package org.pentaho.pmi.engines;
 
+import org.pentaho.pmi.EngineNotAvailableException;
+import org.pentaho.pmi.PMIEngine;
+import org.pentaho.pmi.Scheme;
+import org.pentaho.pmi.SupervisedScheme;
+import org.pentaho.pmi.UnsupportedSchemeException;
 import weka.core.WekaPackageClassLoaderManager;
 
 import java.util.List;

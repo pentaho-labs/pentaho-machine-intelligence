@@ -1,4 +1,8 @@
-package org.pentaho.pmi;
+package org.pentaho.pmi.engines;
+
+import org.pentaho.pmi.Scheme;
+import org.pentaho.pmi.SupervisedScheme;
+import org.pentaho.pmi.UnsupportedSchemeException;
 
 import java.util.Arrays;
 import java.util.List;
