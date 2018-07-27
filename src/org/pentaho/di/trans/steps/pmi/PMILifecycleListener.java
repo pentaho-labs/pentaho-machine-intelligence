@@ -105,7 +105,7 @@ public class PMILifecycleListener implements KettleLifecycleListener {
       }
 
       // see if we can install a netlib native package to speed up linear regression in Weka.
-      if ( thisName.toLowerCase().contains( "mac" ) ) {
+      /* if ( thisName.toLowerCase().contains( "mac" ) ) {
         weka.core.packageManagement.Package
             netlibNative =
             weka.core.WekaPackageManager.getInstalledPackageInfo( "netlibNativeOSX" );
@@ -138,7 +138,7 @@ public class PMILifecycleListener implements KettleLifecycleListener {
           weka.core.WekaPackageManager
               .installPackageFromRepository( "netlibNativeLinux", latestCompatibleVersion, System.out );
         }
-      }
+      }*/
     } catch ( Exception e ) {
       e.printStackTrace();
     }

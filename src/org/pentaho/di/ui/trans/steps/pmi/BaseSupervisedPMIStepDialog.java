@@ -302,9 +302,19 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
   protected Map<String, Object> m_schemeWidgets = new LinkedHashMap<>();
 
   /**
+   * Holds references to the Labels that hold the textual representations of scheme parameters of type object and array
+   */
+  protected Map<String, Label> m_schemeObjectValueLabelTextReps = new LinkedHashMap<>();
+
+  /**
    * The current scheme's info/paramemter metadata
    */
   protected Map<String, Object> m_topLevelSchemeInfo;
+
+  /**
+   * The map of properties from the top level scheme info
+   */
+  protected Map<String, Map<String, Object>> m_properties;
 
   /**
    * The actual top-level scheme
@@ -1115,12 +1125,47 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     m_schemeTab.setControl( m_schemeComposite );
   }
 
+  @SuppressWarnings( "unchecked" ) protected void refreshSchemeLabels() {
+    if ( m_scheme != null ) {
+      Map<String, Map<String, Object>>
+          properties =
+          (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
+
+      for ( Map.Entry<String, Map<String, Object>> e : properties.entrySet() ) {
+        String propName = e.getKey();
+        Map<String, Object> propDetails = e.getValue();
+        String type = (String) propDetails.get( "type" );
+        String propLabelText = (String) propDetails.get( "label" );
+        Object value = propDetails.get( "value" );
+
+        if ( type.equalsIgnoreCase( "object" ) ) {
+          // refresh the value label for this option
+          Label toRefresh = m_schemeObjectValueLabelTextReps.get( propName );
+          if ( toRefresh != null ) {
+            String textualRep = value != null ? value.toString() : "";
+            toRefresh.setText( textualRep );
+          }
+        } else if ( type.equalsIgnoreCase( "array" ) ) {
+          Label toRefresh = m_schemeObjectValueLabelTextReps.get( propName );
+          if ( toRefresh != null ) {
+            String arrayType = (String) propDetails.get( "array-type" );
+            Object objectValue = propDetails.get( "objectValue" );
+            if ( arrayType != null && arrayType.length() > 0 && arrayType.equalsIgnoreCase( "object" ) ) {
+              toRefresh.setText( value.toString() + " : " + Array.getLength( objectValue ) );
+            }
+          }
+        }
+      }
+    }
+  }
+
   @SuppressWarnings( "unchecked" )
   protected void populateSchemeTab( boolean engineChange, BaseSupervisedPMIStepMeta stepMeta ) {
     for ( Control k : m_schemeGroup.getChildren() ) {
       k.dispose();
     }
     m_schemeWidgets.clear();
+    m_schemeObjectValueLabelTextReps.clear();
 
     String currentEngine = m_engineDropDown.getText();
     if ( !Const.isEmpty( currentEngine ) ) {
@@ -1181,11 +1226,9 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
           lastControl = helpGroup;
         }
 
-        final Map<String, Map<String, Object>>
-            properties =
-            (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
+        m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
         // lastControl = null;
-        for ( Map.Entry<String, Map<String, Object>> e : properties.entrySet() ) {
+        for ( Map.Entry<String, Map<String, Object>> e : m_properties.entrySet() ) {
           final String propName = e.getKey();
           final Map<String, Object> propDetails = e.getValue();
           String tipText = (String) propDetails.get( "tip-text" );
@@ -1210,6 +1253,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
             props.setLook( objectValueLab );
             objectValueLab.setText( objectTextRep );
             objectValueLab.setLayoutData( getFirstPromptFormData( propLabel ) );
+            m_schemeObjectValueLabelTextReps.put( propName, objectValueLab );
 
             final Button objectValEditBut = new Button( m_schemeGroup, SWT.PUSH );
             props.setLook( objectValEditBut );
@@ -1234,10 +1278,17 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
                   if ( result == SWT.OK ) {
                     Object selectedTreeValue = treeDialog.getSelectedTreeObject();
                     if ( selectedTreeValue != null ) {
-                      Map<String, Object> propDetails = properties.get( propName );
+                      Map<String, Object> propDetails = m_properties.get( propName );
                       if ( propDetails != null ) {
                         propDetails.put( "objectValue", selectedTreeValue );
                       }
+
+                      // This is solely in case there is a dependency between options, i.e. where changing the value of
+                      // one option causes another one to change.
+                      m_scheme.setSchemeParameters( m_properties );
+                      m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
+                      m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
+                      refreshSchemeLabels();
                     }
                     objectValueLab.setText( SchemeUtils.getTextRepresentationOfObjectValue( selectedTreeValue ) );
                   }
@@ -1257,6 +1308,9 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
                 objectValEditBut.setEnabled( false );
                 objectChooseBut.setEnabled( false );
                 try {
+                  // re-get the prop details here in case changing another object-based option has resulted in
+                  // a change to this one due to a dependency
+                  Map<String, Object> propDetails = m_properties.get( propName );
                   GOEDialog
                       dialog =
                       new GOEDialog( shell, SWT.OK | SWT.CANCEL, propDetails.get( "objectValue" ), transMeta );
@@ -1264,6 +1318,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
 
                   objectValueLab
                       .setText( SchemeUtils.getTextRepresentationOfObjectValue( propDetails.get( "objectValue" ) ) );
+
+                  // This is solely in case there is a dependency between options, i.e. where changing the value of
+                  // one option causes another one to change.
+                  //m_scheme.setSchemeParameters( m_properties );
+                  // m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
+                  // refreshSchemeLabels();
                 } catch ( Exception e1 ) {
                   e1.printStackTrace();
                 } finally {
@@ -1286,6 +1346,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
               props.setLook( arrayElementType );
               arrayElementType.setText( value.toString() + " : " + Array.getLength( objectValue ) );
               arrayElementType.setLayoutData( getFirstPromptFormData( propLabel ) );
+              m_schemeObjectValueLabelTextReps.put( propName, arrayElementType );
 
               final Button arrayValEditBut = new Button( m_schemeGroup, SWT.PUSH );
               props.setLook( arrayValEditBut );
@@ -1297,6 +1358,9 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
               arrayValEditBut.addSelectionListener( new SelectionAdapter() {
                 @Override public void widgetSelected( SelectionEvent selectionEvent ) {
                   super.widgetSelected( selectionEvent );
+                  // re-get the prop details here in case changing another object-based option has resulted in
+                  // a change to this one due to a dependency
+                  Map<String, Object> propDetails = m_properties.get( propName );
                   arrayValEditBut.setEnabled( false );
                   Object arrValue = propDetails.get( "objectValue" );
                   try {
