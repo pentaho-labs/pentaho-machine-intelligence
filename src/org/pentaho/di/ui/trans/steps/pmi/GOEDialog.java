@@ -72,9 +72,15 @@ public class GOEDialog extends Dialog {
   protected Shell m_parent;
   protected Shell m_shell;
   protected Map<String, Object> m_objectToEditMeta;
+  protected Map<String, Map<String, Object>> m_properties;
   protected Object m_objectToEdit;
 
   protected Map<String, Object> m_schemeWidgets = new LinkedHashMap<>();
+
+  /**
+   * Holds references to the Labels that hold the textual representations of scheme parameters of type object and array
+   */
+  protected Map<String, Label> m_schemeObjectValueLabelTextReps = new LinkedHashMap<>();
 
   protected VariableSpace m_vars;
 
@@ -82,7 +88,8 @@ public class GOEDialog extends Dialog {
 
   protected int m_returnValue;
 
-  public GOEDialog( Shell shell, int i, Object objectToEdit, VariableSpace vars ) throws Exception {
+  @SuppressWarnings( "unchecked" ) public GOEDialog( Shell shell, int i, Object objectToEdit, VariableSpace vars )
+      throws Exception {
     super( shell, i );
 
     m_parent = shell;
@@ -90,6 +97,7 @@ public class GOEDialog extends Dialog {
     m_objectToEditMeta =
         m_objectToEdit instanceof Scheme ? ( (Scheme) m_objectToEdit ).getSchemeInfo() :
             SchemeUtils.getSchemeParameters( m_objectToEdit );
+    m_properties = (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
     m_props = PropsUI.getInstance();
     m_vars = vars;
   }
@@ -165,6 +173,10 @@ public class GOEDialog extends Dialog {
     }
 
     // now set the values on the underlying object
+    setValuesOnObject( objectToEdit, properties );
+  }
+
+  protected static void setValuesOnObject( Object objectToEdit, Map<String, Map<String, Object>> properties ) {
     try {
       if ( objectToEdit instanceof Scheme ) {
         ( (Scheme) objectToEdit ).setSchemeParameters( properties );
@@ -174,6 +186,40 @@ public class GOEDialog extends Dialog {
     } catch ( Exception e ) {
       e.printStackTrace();
       // TODO popup error dialog
+    }
+  }
+
+  @SuppressWarnings( "unchecked" ) protected void refreshSchemeLabels() {
+    if ( m_objectToEdit != null ) {
+      Map<String, Map<String, Object>>
+          properties =
+          (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
+
+      for ( Map.Entry<String, Map<String, Object>> e : properties.entrySet() ) {
+        String propName = e.getKey();
+        Map<String, Object> propDetails = e.getValue();
+        String type = (String) propDetails.get( "type" );
+        String propLabelText = (String) propDetails.get( "label" );
+        Object value = propDetails.get( "value" );
+
+        if ( type.equalsIgnoreCase( "object" ) ) {
+          // refresh the value label for this option
+          Label toRefresh = m_schemeObjectValueLabelTextReps.get( propName );
+          if ( toRefresh != null ) {
+            String textualRep = value != null ? value.toString() : "";
+            toRefresh.setText( textualRep );
+          }
+        } else if ( type.equalsIgnoreCase( "array" ) ) {
+          Label toRefresh = m_schemeObjectValueLabelTextReps.get( propName );
+          if ( toRefresh != null ) {
+            String arrayType = (String) propDetails.get( "array-type" );
+            Object objectValue = propDetails.get( "objectValue" );
+            if ( arrayType != null && arrayType.length() > 0 && arrayType.equalsIgnoreCase( "object" ) ) {
+              toRefresh.setText( value.toString() + " : " + Array.getLength( objectValue ) );
+            }
+          }
+        }
+      }
     }
   }
 
@@ -226,11 +272,9 @@ public class GOEDialog extends Dialog {
       lastControl = helpGroup;
     }
 
-    final Map<String, Map<String, Object>>
-        properties =
-        (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
+    m_properties = (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
 
-    for ( Map.Entry<String, Map<String, Object>> e : properties.entrySet() ) {
+    for ( Map.Entry<String, Map<String, Object>> e : m_properties.entrySet() ) {
       final String propName = e.getKey();
       final Map<String, Object> propDetails = e.getValue();
       String tipText = (String) propDetails.get( "tip-text" );
@@ -260,6 +304,7 @@ public class GOEDialog extends Dialog {
         m_props.setLook( objectValueLab );
         objectValueLab.setText( objectTextRep );
         objectValueLab.setLayoutData( getFirstPromptFormData( propLabel ) );
+        m_schemeObjectValueLabelTextReps.put( propName, objectValueLab );
 
         final Button objectValEditBut = new Button( m_shell, SWT.PUSH );
         m_props.setLook( objectValEditBut );
@@ -281,10 +326,19 @@ public class GOEDialog extends Dialog {
               if ( result == SWT.OK ) {
                 Object selectedTreeValue = treeDialog.getSelectedTreeObject();
                 if ( selectedTreeValue != null ) {
-                  Map<String, Object> propDetails = properties.get( propName );
+                  Map<String, Object> propDetails = m_properties.get( propName );
                   if ( propDetails != null ) {
                     propDetails.put( "objectValue", selectedTreeValue );
                   }
+
+                  // This is solely in case there is a dependency between options, i.e. where changing the value of
+                  // one option causes another one to change.
+                  setValuesOnObject( m_objectToEdit, m_properties );
+                  m_objectToEditMeta =
+                      m_objectToEdit instanceof Scheme ? ( (Scheme) m_objectToEdit ).getSchemeInfo() :
+                          SchemeUtils.getSchemeParameters( m_objectToEdit );
+                  m_properties = (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
+                  refreshSchemeLabels();
                 }
                 objectValueLab.setText( SchemeUtils.getTextRepresentationOfObjectValue( selectedTreeValue ) );
               }
@@ -304,6 +358,9 @@ public class GOEDialog extends Dialog {
             objectValEditBut.setEnabled( false );
             objectChooseBut.setEnabled( false );
             try {
+              // re-get the prop details here in case changing another object-based option has resulted in
+              // a change to this one due to a dependency
+              Map<String, Object> propDetails = m_properties.get( propName );
               GOEDialog
                   dialog =
                   new GOEDialog( GOEDialog.this.getParent(), SWT.OK | SWT.CANCEL, propDetails.get( "objectValue" ),
@@ -333,6 +390,7 @@ public class GOEDialog extends Dialog {
           m_props.setLook( arrayElementType );
           arrayElementType.setText( value.toString() );
           arrayElementType.setLayoutData( getFirstPromptFormData( propLabel ) );
+          m_schemeObjectValueLabelTextReps.put( propName, arrayElementType );
 
           final Button arrayValEditBut = new Button( m_shell, SWT.PUSH );
           m_props.setLook( arrayValEditBut );
@@ -344,12 +402,13 @@ public class GOEDialog extends Dialog {
           arrayValEditBut.addSelectionListener( new SelectionAdapter() {
             @Override public void widgetSelected( SelectionEvent selectionEvent ) {
               super.widgetSelected( selectionEvent );
+              // re-get the prop details here in case changing another object-based option has resulted in
+              // a change to this one due to a dependency
+              Map<String, Object> propDetails = m_properties.get( propName );
               arrayValEditBut.setEnabled( false );
               Object arrValue = propDetails.get( "objectValue" );
               try {
-                GAEDialog
-                    dialog =
-                    new GAEDialog( m_shell, SWT.OK | SWT.CANCEL, arrValue, (Class<?>) value, m_vars );
+                GAEDialog dialog = new GAEDialog( m_shell, SWT.OK | SWT.CANCEL, arrValue, (Class<?>) value, m_vars );
                 dialog.open();
                 Object newArrValue = dialog.getArray();
                 propDetails.put( "objectValue", newArrValue );

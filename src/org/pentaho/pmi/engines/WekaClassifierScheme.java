@@ -165,14 +165,14 @@ public class WekaClassifierScheme extends SupervisedScheme {
     } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) || schemeName
         .equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
       m_underlyingScheme = new MultilayerPerceptron();
-    } else if ( schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
+    } /* else if ( schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
       try {
         m_underlyingScheme =
             (Classifier) WekaPackageClassLoaderManager.objectForName( "weka.classifiers.functions.Dl4jMlpClassifier" );
       } catch ( Exception e ) {
         throw new UnsupportedSchemeException( e );
       }
-    } else {
+    } */ else {
       throw new UnsupportedSchemeException(
           "Classification/regression scheme '" + schemeName + "' is unsupported in Weka" );
     }

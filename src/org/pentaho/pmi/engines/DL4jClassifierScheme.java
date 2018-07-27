@@ -26,21 +26,7 @@ public class DL4jClassifierScheme extends SupervisedScheme {
   public DL4jClassifierScheme( String schemeName ) throws Exception {
     super( schemeName );
 
-    if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) ) {
-
-    } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
-
-    } else if ( schemeName.equalsIgnoreCase( "Logistic regression" ) ) {
-
-    } else if ( schemeName.equalsIgnoreCase( "Support vector classifier" ) ) {
-
-    } else if ( schemeName.equalsIgnoreCase( "Support vector regressor" ) ) {
-
-    } else if ( schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
-
-    } else {
-      throw new UnsupportedSchemeException( "DL4j engine does not support " + schemeName );
-    }
+    instantiateDL4jClassifier( schemeName );
   }
 
   protected void instantiateDL4jClassifier( String schemeName ) throws Exception {
@@ -70,6 +56,41 @@ public class DL4jClassifierScheme extends SupervisedScheme {
               + "-algorithm STOCHASTIC_GRADIENT_DESCENT -updater \"weka.dl4j.updater.Adam -beta1MeanDecay 0.9 "
               + "-beta2VarDecay 0.999 -epsilon 1.0E-8 -lr 0.01 -lrSchedule \\\"weka.dl4j.schedules.ConstantSchedule "
               + "-scheduleType EPOCH\\\"\" -weightInit XAVIER -weightNoise \"weka.dl4j.weightnoise.Disabled \"" );
+    } else if ( schemeName.equalsIgnoreCase( "Linear regression" ) ) {
+      setOptionsForObject( (OptionHandler) m_underlyingScheme,
+          "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
+              + "-name \\\"Dense layer\\\"\" -layer \"weka.dl4j.layers.OutputLayer "
+              + "-lossFn \\\"weka.dl4j.lossfunctions.LossMSE \\\" -nOut 0 "
+              + "-activation \\\"weka.dl4j.activations.ActivationSoftmax \\\" -name \\\"Output layer\\\"\"" );
+      Object neuralNetConfig = getProp( m_underlyingScheme, "getNeuralNetConfiguration" );
+      setOptionsForObject( (OptionHandler) neuralNetConfig,
+          "-biasInit 0.0 -biasUpdater \"weka.dl4j.updater.Adam -beta1MeanDecay 0.9 -beta2VarDecay 0.999 "
+              + "-epsilon 1.0E-8 -lr 0.01 -lrSchedule \\\"weka.dl4j.schedules.ConstantSchedule -scheduleType EPOCH\\\"\" "
+              + "-dist \"weka.dl4j.distribution.Disabled \" -dropout \"weka.dl4j.dropout.Disabled \" "
+              + "-gradientNormalization None -gradNormThreshold 1.0 -l1 NaN -l2 NaN -minimize "
+              + "-algorithm STOCHASTIC_GRADIENT_DESCENT -updater \"weka.dl4j.updater.Adam -beta1MeanDecay 0.9 "
+              + "-beta2VarDecay 0.999 -epsilon 1.0E-8 -lr 0.01 -lrSchedule \\\"weka.dl4j.schedules.ConstantSchedule "
+              + "-scheduleType EPOCH\\\"\" -weightInit XAVIER -weightNoise \"weka.dl4j.weightnoise.Disabled \"" );
+    } else if ( schemeName.equalsIgnoreCase( "Support vector classifier" ) ) {
+      setOptionsForObject( (OptionHandler) m_underlyingScheme,
+          "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
+              + "-name \\\"Dense layer\\\"\" -layer \"weka.dl4j.layers.OutputLayer "
+              + "-lossFn \\\"weka.dl4j.lossfunctions.LossHinge \\\" -nOut 0 "
+              + "-activation \\\"weka.dl4j.activations.ActivationSoftmax \\\" -name \\\"Output layer\\\"\"" );
+
+      Object neuralNetConfig = getProp( m_underlyingScheme, "getNeuralNetConfiguration" );
+      setOptionsForObject( (OptionHandler) neuralNetConfig,
+          "-biasInit 0.0 -biasUpdater \"weka.dl4j.updater.Adam -beta1MeanDecay 0.9 -beta2VarDecay 0.999 "
+              + "-epsilon 1.0E-8 -lr 0.01 -lrSchedule \\\"weka.dl4j.schedules.ConstantSchedule -scheduleType EPOCH\\\"\" "
+              + "-dist \"weka.dl4j.distribution.Disabled \" -dropout \"weka.dl4j.dropout.Disabled \" "
+              + "-gradientNormalization None -gradNormThreshold 1.0 -l1 NaN -l2 NaN -minimize "
+              + "-algorithm STOCHASTIC_GRADIENT_DESCENT -updater \"weka.dl4j.updater.Adam -beta1MeanDecay 0.9 "
+              + "-beta2VarDecay 0.999 -epsilon 1.0E-8 -lr 0.01 -lrSchedule \\\"weka.dl4j.schedules.ConstantSchedule "
+              + "-scheduleType EPOCH\\\"\" -weightInit XAVIER -weightNoise \"weka.dl4j.weightnoise.Disabled \"" );
+    } else if ( schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
+      // nothing to do here, as this is maximum flexibility to the user to adjust layers, hyper-paramenters etc.
+    } else {
+      throw new UnsupportedSchemeException( "DL4j engine does not support " + schemeName );
     }
   }
 
@@ -129,8 +150,10 @@ public class DL4jClassifierScheme extends SupervisedScheme {
   }
 
   @Override public Object getConfiguredScheme( Instances trainingHeader ) throws Exception {
-    // TODO
-    if ( m_schemeName.equalsIgnoreCase( "Logistic regression" ) ) {
+
+    // set outputs from single dense hidden layer to be equal to the number of independent variables
+    // for all network structures except for unrestricted deep learning network.
+    if ( !m_schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
       int numInputs = trainingHeader.numAttributes() - 1;
       Object layerArray = getProp( m_underlyingScheme, "getLayers" );
       // dense layer will be first in the array, unless user has done something weird
