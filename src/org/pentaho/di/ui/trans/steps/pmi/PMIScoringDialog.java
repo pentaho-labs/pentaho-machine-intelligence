@@ -90,7 +90,7 @@ public class PMIScoringDialog extends BaseStepDialog implements StepDialogInterf
   /**
    * Checkbox for serializing model into step meta data
    */
-  private Button m_storeModelInStepMetaData;
+  // private Button m_storeModelInStepMetaData;
 
   /**
    * Checkbox for accept filename from field
@@ -414,7 +414,9 @@ public class PMIScoringDialog extends BaseStepDialog implements StepDialogInterf
     setSize();
 
     getData();
-    loadModel();
+    if ( m_inputMeta.getModel() == null ) {
+      loadModel();
+    }
 
     shell.open();
     while ( !shell.isDisposed() ) {
@@ -447,12 +449,11 @@ public class PMIScoringDialog extends BaseStepDialog implements StepDialogInterf
 
     m_inputMeta.setFileNameFromField( m_wAcceptFileNameFromFieldCheckBox.getSelection() );
 
-    m_inputMeta.setStoreModelInStepMetaData( m_storeModelInStepMetaData.getSelection() );
+    // m_inputMeta.setStoreModelInStepMetaData( m_storeModelInStepMetaData.getSelection() );
 
     if ( !Const.isEmpty( m_wFilename.getText() ) && !m_inputMeta.getStoreModelInStepMetaData() ) {
       m_inputMeta.setSerializedModelFileName( m_wFilename.getText() );
     } else {
-
       if ( !Const.isEmpty( m_wFilename.getText() ) ) {
         // need to load model and set in meta data here
         loadModel();
@@ -531,7 +532,7 @@ public class PMIScoringDialog extends BaseStepDialog implements StepDialogInterf
       m_batchScoringBatchSizeText.setText( m_inputMeta.getBatchScoringSize() );
     }
 
-    m_storeModelInStepMetaData.setSelection( m_inputMeta.getStoreModelInStepMetaData() );
+    // m_storeModelInStepMetaData.setSelection( m_inputMeta.getStoreModelInStepMetaData() );
 
     m_wPerformEvaluation.setSelection( m_inputMeta.getEvaluateRatherThanScore() );
     m_wOutputIRMetrics.setSelection( m_inputMeta.getOutputIRMetrics() );
@@ -693,36 +694,38 @@ public class PMIScoringDialog extends BaseStepDialog implements StepDialogInterf
     m_wFilename.setLayoutData( fd );
 
     // store model in meta data
-    Label saveModelMetaLab = new Label( wFileComp, SWT.RIGHT );
+    /* Label saveModelMetaLab = new Label( wFileComp, SWT.RIGHT );
     props.setLook( saveModelMetaLab );
     saveModelMetaLab.setText( BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringDialog.SaveModelToMeta.Label" ) );
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
     fd.top = new FormAttachment( m_wFilename, margin );
     fd.right = new FormAttachment( middle, -margin );
-    saveModelMetaLab.setLayoutData( fd );
+    saveModelMetaLab.setLayoutData( fd ); */
 
-    m_storeModelInStepMetaData = new Button( wFileComp, SWT.CHECK );
+    /* m_storeModelInStepMetaData = new Button( wFileComp, SWT.CHECK );
     props.setLook( m_storeModelInStepMetaData );
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
     fd.top = new FormAttachment( m_wFilename, margin );
     fd.right = new FormAttachment( 100, 0 );
-    m_storeModelInStepMetaData.setLayoutData( fd );
+    m_storeModelInStepMetaData.setLayoutData( fd ); */
 
     Label updateModelLab = new Label( wFileComp, SWT.RIGHT );
     updateModelLab.setText( BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringDialog.UpdateModel.Label" ) );
     props.setLook( updateModelLab );
     fd = new FormData();
     fd.left = new FormAttachment( 0, 0 );
-    fd.top = new FormAttachment( m_storeModelInStepMetaData, margin );
+    // fd.top = new FormAttachment( m_storeModelInStepMetaData, margin );
+    fd.top = new FormAttachment( m_wFilename, margin );
     fd.right = new FormAttachment( middle, -margin );
     updateModelLab.setLayoutData( fd );
     m_wUpdateModel = new Button( wFileComp, SWT.CHECK );
     props.setLook( m_wUpdateModel );
     fd = new FormData();
     fd.left = new FormAttachment( middle, 0 );
-    fd.top = new FormAttachment( m_storeModelInStepMetaData, margin );
+    // fd.top = new FormAttachment( m_storeModelInStepMetaData, margin );
+    fd.top = new FormAttachment( m_wFilename, margin );
     fd.right = new FormAttachment( 100, 0 );
     m_wUpdateModel.setLayoutData( fd );
     m_wUpdateModel.addSelectionListener( new SelectionAdapter() {
@@ -997,7 +1000,7 @@ public class PMIScoringDialog extends BaseStepDialog implements StepDialogInterf
 
     boolean success = false;
     try {
-      if ( !Const.isEmpty( filename ) && PMIScoringData.modelFileExists( filename, transMeta ) ) {
+      if ( PMIScoringData.modelFileExists( filename, transMeta ) ) {
 
         PMIScoringModel tempM = PMIScoringData.loadSerializedModel( filename, log, transMeta );
         m_wModelText.setText( tempM.toString() );

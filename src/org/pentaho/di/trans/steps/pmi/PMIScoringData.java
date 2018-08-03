@@ -87,7 +87,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
    * Holds the actual PMI model (classifier, clusterer or PMML) used by this
    * copy of the step
    */
-  protected PMIScoringModel m_model;
+  protected transient PMIScoringModel m_model;
 
   /**
    * Holds a default model - only used when model files are sourced from a field
