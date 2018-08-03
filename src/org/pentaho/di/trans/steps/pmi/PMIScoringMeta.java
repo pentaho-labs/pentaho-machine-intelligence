@@ -145,14 +145,14 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
   /**
    * Holds the underlying model
    */
-  protected PMIScoringModel m_model;
+  protected transient PMIScoringModel m_model;
 
   /**
    * Holds a default model. Used only when model files are sourced from a field in the incoming data rows. In this case,
    * it is the fallback model if there is no model file specified in the current incoming row. It is also necessary so
    * that getFields() can determine the full output structure
    */
-  protected PMIScoringModel m_defaultModel;
+  protected transient PMIScoringModel m_defaultModel;
 
   /**
    * Set whether to perform evaluation on the incoming stream (if targets are present) rather than score the data.
@@ -455,7 +455,7 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
    */
   @Override public Object clone() {
     PMIScoringMeta retval = (PMIScoringMeta) super.clone();
-    // deep copy the model (if any)
+    /* // deep copy the model (if any)
     if ( m_model != null ) {
       try {
         SerializedObject so = new SerializedObject( m_model );
@@ -477,7 +477,7 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
       } catch ( Exception ex ) {
         logError( BaseMessages.getString( PKG, "PMIScoringMeta.Log.DeepCopyingError" ) ); //$NON-NLS-1$
       }
-    }
+    } */
 
     return retval;
   }

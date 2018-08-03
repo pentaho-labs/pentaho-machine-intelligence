@@ -247,7 +247,8 @@ public class Evaluator {
     m_evalWasPerformed = true;
     Random r = new Random( m_randomSeed );
     // shuffle the training data
-    if ( !m_preserveOrder ) {
+    if ( !m_preserveOrder && ( m_evaluationMode == EvalMode.CROSS_VALIDATION
+        || m_evaluationMode == EvalMode.PERCENTAGE_SPLIT ) ) {
       m_trainingData.randomize( r );
     }
     if ( m_evaluationMode == EvalMode.PERCENTAGE_SPLIT ) {
