@@ -68,7 +68,7 @@ public class RClassifierScheme extends SupervisedScheme {
   protected static final String R_CLASSIF_NAIVE_BAYES = "classif.naiveBayes";
   protected static final String R_CLASSIF_RPART = "classif.rpart";
   protected static final String R_REGR_RPART = "regr.rpart";
-  protected static final String R_REGR_LM = "regr.rpart";
+  protected static final String R_REGR_LM = "regr.lm";
   protected static final String R_CLASSIF_SVM = "classif.svm";
   protected static final String R_REGR_SVM = "regr.svm";
   protected static final String R_CLASSIF_RANDOM_FOREST = "classif.randomForest";
