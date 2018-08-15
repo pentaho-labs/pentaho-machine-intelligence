@@ -37,6 +37,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.ui.core.PropsUI;
@@ -452,7 +453,7 @@ public class GOEDialog extends Dialog {
         lastControl = boolBut;
         m_schemeWidgets.put( propName, boolBut );
       } else {
-        TextVar propVar = new TextVar( m_vars, m_shell, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        Text propVar = new Text( m_shell, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
         m_props.setLook( propVar );
         if ( value != null ) {
           propVar.setText( value.toString() );
