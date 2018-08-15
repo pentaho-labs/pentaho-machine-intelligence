@@ -440,7 +440,11 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     meta.setRandomSeedReservoirSampling( m_reservoirRandomSeedField.getText() );
 
     meta.setTrainingStepInputName( m_trainingStepDropDown.getText() );
-    meta.setTestingStepInputName( m_testStepDropDown.getText() );
+    if ( m_evalModeDropDown.getText().equalsIgnoreCase( Evaluator.EvalMode.SEPARATE_TEST_SET.toString() ) ) {
+      meta.setTestingStepInputName( m_testStepDropDown.getText() );
+    } else {
+      meta.setTestingStepInputName( "" );
+    }
     meta.setClassField( m_classFieldDropDown.getText() );
     meta.setStratificationFieldName( m_stratificationFieldDropDown.getText() );
 
@@ -453,11 +457,13 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
         infoStreams.get( 0 ).setStepMeta( m );
       }
     }
-    String testStepName = meta.getTestingStepInputName();
-    if ( !Const.isEmpty( testStepName ) ) {
-      StepMeta m = transMeta.findStep( transMeta.environmentSubstitute( testStepName ) );
-      if ( m != null ) {
-        infoStreams.get( 1 ).setStepMeta( m );
+    if ( m_evalModeDropDown.getText().equalsIgnoreCase( Evaluator.EvalMode.SEPARATE_TEST_SET.toString() ) ) {
+      String testStepName = meta.getTestingStepInputName();
+      if ( !Const.isEmpty( testStepName ) ) {
+        StepMeta m = transMeta.findStep( transMeta.environmentSubstitute( testStepName ) );
+        if ( m != null ) {
+          infoStreams.get( 1 ).setStepMeta( m );
+        }
       }
     }
 

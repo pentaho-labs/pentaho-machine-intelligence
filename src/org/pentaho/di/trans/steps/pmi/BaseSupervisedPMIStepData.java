@@ -817,8 +817,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
 
     Instances dataset = new Instances( header, data.size() );
     for ( Object[] row : data ) {
-      Instance toAdd = constructInstance( header, inputRowMeta, row, streamFieldLookup, stepMeta );
-      toAdd.setDataset( dataset );
+      Instance toAdd = constructInstance( dataset, inputRowMeta, row, streamFieldLookup, stepMeta );
       dataset.add( toAdd );
     }
 
