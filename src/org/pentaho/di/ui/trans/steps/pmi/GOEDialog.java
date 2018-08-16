@@ -163,6 +163,8 @@ public class GOEDialog extends Dialog {
         widgetVal = ( (ComboVar) widget ).getText();
       } else if ( widget instanceof TextVar ) {
         widgetVal = ( (TextVar) widget ).getText();
+      } else if ( widget instanceof Text ) {
+        widgetVal = ( (Text) widget ).getText();
       } else if ( widget instanceof Button ) {
         widgetVal = ( (Button) widget ).getSelection() ? "true" : "false";
       }
