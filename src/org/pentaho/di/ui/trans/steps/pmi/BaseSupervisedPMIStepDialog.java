@@ -1426,7 +1426,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
             m_schemeWidgets.put( propName, pickListCombo );
 */
           } else {
-            TextVar propVar = new TextVar( transMeta, m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+            Text propVar = new Text( m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
             props.setLook( propVar );
             if ( value != null ) {
               propVar.setText( value.toString() );
