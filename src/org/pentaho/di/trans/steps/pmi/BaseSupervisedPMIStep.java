@@ -109,10 +109,8 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
 
         m_data.m_scheme = m_data.m_engine.getScheme( environmentSubstitute( m_meta.getSchemeName() ) );
         if ( !Const.isEmpty( m_meta.getSchemeCommandLineOptions() ) ) {
-          System.err
-              .println( "Scheme command line opts " + environmentSubstitute( m_meta.getSchemeCommandLineOptions() ) );
           m_data.m_scheme
-              .setSchemeOptions( Utils.splitOptions( environmentSubstitute( m_meta.getSchemeCommandLineOptions() ) ) );
+              .setSchemeOptions( Utils.splitOptions( m_meta.getSchemeCommandLineOptions() )  );
         }
         m_data.m_scheme.setSamplingConfigs( m_meta.getSamplingConfigs() );
         m_data.m_scheme.setPreprocessingConfigs( m_meta.getPreprocessingConfigs() );
