@@ -833,20 +833,19 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
         if ( supervised ) {
           classAttName = header.classAttribute().name();
 
-          if ( header.classAttribute().isNumeric() || !m_outputProbabilities ) {
-            int
-                valueType =
-                ( header.classAttribute().isNumeric() ) ? ValueMetaInterface.TYPE_NUMBER :
-                    ValueMetaInterface.TYPE_STRING;
+          int
+              valueType =
+              ( header.classAttribute().isNumeric() ) ? ValueMetaInterface.TYPE_NUMBER : ValueMetaInterface.TYPE_STRING;
 
-            ValueMetaInterface newVM = ValueMetaFactory.createValueMeta( classAttName + "_predicted", valueType );
-            newVM.setOrigin( origin );
-            row.addValueMeta( newVM );
-          } else {
+          ValueMetaInterface newVM = ValueMetaFactory.createValueMeta( classAttName + "_predicted", valueType );
+          newVM.setOrigin( origin );
+          row.addValueMeta( newVM );
+
+          if ( m_outputProbabilities && !header.classAttribute().isNumeric() ) {
             for ( int i = 0; i < header.classAttribute().numValues(); i++ ) {
               String classVal = header.classAttribute().value( i );
-              ValueMetaInterface
-                  newVM =
+              // ValueMetaInterface
+              newVM =
                   ValueMetaFactory.createValueMeta( classAttName + ":" + classVal + "_predicted_prob",
                       ValueMetaInterface.TYPE_NUMBER );
               newVM.setOrigin( origin );
@@ -854,12 +853,18 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
             }
           }
         } else {
+          ValueMetaInterface
+              newVM =
+              ValueMetaFactory.createValueMeta( "cluster#_predicted", ValueMetaInterface.TYPE_NUMBER );
+          newVM.setOrigin( origin );
+          row.addValueMeta( newVM );
+
           if ( m_outputProbabilities ) {
             try {
               int numClusters = ( (PMIScoringClusterer) m_model ).numberOfClusters();
               for ( int i = 0; i < numClusters; i++ ) {
-                ValueMetaInterface
-                    newVM =
+                //  ValueMetaInterface
+                newVM =
                     ValueMetaFactory
                         .createValueMeta( "cluster_" + i + "_predicted_prob", ValueMetaInterface.TYPE_NUMBER );
                 newVM.setOrigin( origin );
@@ -869,12 +874,6 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
               throw new KettleStepException(
                   BaseMessages.getString( PKG, "PMIScoringMeta.Error.UnableToGetNumberOfClusters" ), ex );
             }
-          } else {
-            ValueMetaInterface
-                newVM =
-                ValueMetaFactory.createValueMeta( "cluster#_predicted", ValueMetaInterface.TYPE_NUMBER );
-            newVM.setOrigin( origin );
-            row.addValueMeta( newVM );
           }
         }
       } catch ( KettlePluginException e ) {
