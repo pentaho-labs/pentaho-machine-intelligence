@@ -468,29 +468,28 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
 
       double[] prediction = preds[i];
 
-      if ( prediction.length == 1 || !outputProbs ) {
-        if ( supervised ) {
-          if ( classAtt.isNumeric() ) {
-            resultRow[index++] = prediction[0];
-          } else {
-            int maxProb = Utils.maxIndex( prediction );
-            if ( prediction[maxProb] > 0 ) {
-              resultRow[index++] = classAtt.value( maxProb );
-            } else {
-              resultRow[index++] =
-                  BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredict" );
-            }
-          }
+      if ( supervised ) {
+        if ( classAtt.isNumeric() ) {
+          resultRow[index++] = prediction[0];
         } else {
           int maxProb = Utils.maxIndex( prediction );
           if ( prediction[maxProb] > 0 ) {
-            resultRow[index++] = maxProb;
+            resultRow[index++] = classAtt.value( maxProb );
           } else {
-            resultRow[index++] =
-                BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredictCluster" );
+            resultRow[index++] = BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredict" );
           }
         }
       } else {
+        int maxProb = Utils.maxIndex( prediction );
+        if ( prediction[maxProb] > 0 ) {
+          resultRow[index++] = maxProb;
+        } else {
+          resultRow[index++] =
+              BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredictCluster" );
+        }
+      }
+
+      if ( ( outputProbs && classAtt == null ) || ( outputProbs && !classAtt.isNumeric() ) ) {
         // output probability distribution
         for ( double j : prediction ) {
           resultRow[index++] = j;
@@ -544,29 +543,28 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
     int index = inputMeta.size();
 
     // output for numeric class or discrete class value
-    if ( prediction.length == 1 || !outputProbs ) {
-      if ( supervised ) {
-        if ( classAtt.isNumeric() ) {
-          resultRow[index++] = prediction[0];
-        } else {
-          int maxProb = Utils.maxIndex( prediction );
-          if ( prediction[maxProb] > 0 ) {
-            resultRow[index++] = classAtt.value( maxProb );
-          } else {
-            resultRow[index++] =
-                BaseMessages.getString( PMIScoringMeta.PKG, "WekaScoringData.Message.UnableToPredict" );
-          }
-        }
+    if ( supervised ) {
+      if ( classAtt.isNumeric() ) {
+        resultRow[index++] = prediction[0];
       } else {
         int maxProb = Utils.maxIndex( prediction );
         if ( prediction[maxProb] > 0 ) {
-          resultRow[index++] = maxProb;
+          resultRow[index++] = classAtt.value( maxProb );
         } else {
-          String newVal = BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredictCluster" );
-          resultRow[index++] = newVal;
+          resultRow[index++] = BaseMessages.getString( PMIScoringMeta.PKG, "WekaScoringData.Message.UnableToPredict" );
         }
       }
     } else {
+      int maxProb = Utils.maxIndex( prediction );
+      if ( prediction[maxProb] > 0 ) {
+        resultRow[index++] = maxProb;
+      } else {
+        String newVal = BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredictCluster" );
+        resultRow[index++] = newVal;
+      }
+    }
+
+    if ( ( outputProbs && classAtt == null ) || ( outputProbs && !classAtt.isNumeric() ) ) {
       // output probability distribution
       for ( int i = 0; i < prediction.length; i++ ) {
         Double newVal = prediction[i];
