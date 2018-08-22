@@ -851,6 +851,11 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
               newVM.setOrigin( origin );
               row.addValueMeta( newVM );
             }
+
+            // add one for the max probability too
+            newVM = ValueMetaFactory.createValueMeta( classAttName + "_max_prob", ValueMetaInterface.TYPE_NUMBER );
+            newVM.setOrigin( origin );
+            row.addValueMeta( newVM );
           }
         } else {
           ValueMetaInterface
@@ -870,6 +875,9 @@ public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
                 newVM.setOrigin( origin );
                 row.addValueMeta( newVM );
               }
+              newVM = ValueMetaFactory.createValueMeta( "cluster_max_prob", ValueMetaInterface.TYPE_NUMBER );
+              newVM.setOrigin( origin );
+              row.addValueMeta( newVM );
             } catch ( Exception ex ) {
               throw new KettleStepException(
                   BaseMessages.getString( PKG, "PMIScoringMeta.Error.UnableToGetNumberOfClusters" ), ex );

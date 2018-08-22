@@ -494,6 +494,8 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
         for ( double j : prediction ) {
           resultRow[index++] = j;
         }
+        int maxProb = Utils.maxIndex( prediction );
+        resultRow[index] = prediction[maxProb];
       }
 
       result[i] = resultRow;
@@ -570,6 +572,8 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
         Double newVal = prediction[i];
         resultRow[index++] = newVal;
       }
+      int maxProb = Utils.maxIndex( prediction );
+      resultRow[index] = prediction[maxProb];
     }
 
     return resultRow;
