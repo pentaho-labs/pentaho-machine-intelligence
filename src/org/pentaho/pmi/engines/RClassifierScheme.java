@@ -106,6 +106,7 @@ public class RClassifierScheme extends SupervisedScheme {
    */
   protected void instantiateMLRClassifier( String schemeName ) throws Exception {
     m_scheme = (Classifier) WekaPackageClassLoaderManager.objectForName( "weka.classifiers.mlr.MLRClassifier" );
+    // setLogMessagesFromR( m_scheme, true );
 
     // get the tags array
     Class<?> learnerClazz = m_scheme.getClass();
@@ -144,6 +145,9 @@ public class RClassifierScheme extends SupervisedScheme {
     }
 
     setLearnerOnScheme( m_scheme, m_mlrLearner.getID() );
+
+    // now call getCapabilities() to force any R package installs required.
+    // ( (CapabilitiesHandler) m_scheme ).getCapabilities();
   }
 
   protected Tag findApplicableTagForScheme( String readableRPackage ) throws WekaException {
@@ -176,6 +180,12 @@ public class RClassifierScheme extends SupervisedScheme {
     Method m = mlrClassifier.getClass().getDeclaredMethod( "setLearnerParams", String.class );
 
     m.invoke( mlrClassifier, learnerOpts != null ? learnerOpts : "" );
+  }
+
+  protected void setLogMessagesFromR( Classifier mlrClassifier, boolean log )
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method m = mlrClassifier.getClass().getDeclaredMethod( "setLogMessagesFromR", boolean.class );
+    m.invoke( mlrClassifier, log );
   }
 
   /**
@@ -477,7 +487,8 @@ public class RClassifierScheme extends SupervisedScheme {
             "Number of variables randomly sampled as candidates at each split. Note that the default values "
                 + "are different for classification (sqrt(p) where p is number of variables in mlr_data (input data "
                 + "frame)) and regression (p/3)", true, false, "string", null, learnerParams, "mtry",
-            "floor(sqrt(ncol(mlr_data)))" );
+            //"floor(sqrt(ncol(mlr_data)))" );
+            "" );
         propertyList.put( "Number of variables", propMap );
 
         propMap = new LinkedHashMap<>();
@@ -488,7 +499,9 @@ public class RClassifierScheme extends SupervisedScheme {
 
         propMap = new LinkedHashMap<>();
         addIndividualRLearnerPropToMap( propMap, "Sample size", "Sample size", "Size of sample to draw.", true, false,
-            "string", null, learnerParams, "sampsize", "nrow(mlr_data)" );
+            "string", null, learnerParams, "sampsize",
+            // "nrow(mlr_data)" );
+            "" );
         propertyList.put( "Sample size", propMap );
 
         propMap = new LinkedHashMap<>();
@@ -536,6 +549,41 @@ public class RClassifierScheme extends SupervisedScheme {
                 + "expansion. This introduces randomnesses into the model fit.", true, false, "string", null,
             learnerParams, "bag.fraction", "1" );
         propertyList.put( "Bag fraction", propMap );
+      } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_NNET ) || m_mlrLearner.getReadable()
+          .equalsIgnoreCase( R_REGR_NNET ) ) {
+        Map<String, Object> propMap = new LinkedHashMap<>();
+        addIndividualRLearnerPropToMap( propMap, "Number of units in the hidden layer",
+            "Number of units in the hidden layer", "Number of units in the hidden layer", true, false, "string", null,
+            learnerParams, "size", "3" );
+        propertyList.put( "Number of units in the hidden layer", propMap );
+
+        propMap = new LinkedHashMap<>();
+        addIndividualRLearnerPropToMap( propMap, "Add skip-layer connections", "Add skip-layer connections",
+            "Add skip-layer connections from input to output", true, false, "boolean", null, learnerParams, "skip",
+            false );
+        propertyList.put( "Add skip-layer connections", propMap );
+
+        propMap = new LinkedHashMap<>();
+        addIndividualRLearnerPropToMap( propMap, "Decay", "Decay", "Parameter for weight decay", true, false, "string",
+            null, learnerParams, "decay", "0" );
+        propertyList.put( "Decay", propMap );
+
+        propMap = new LinkedHashMap<>();
+        addIndividualRLearnerPropToMap( propMap, "Maximum iterations", "Maximum iterations",
+            "Maximum number of iterations", true, false, "string", null, learnerParams, "maxit", "100" );
+        propertyList.put( "Maximum iterations", propMap );
+
+        propMap = new LinkedHashMap<>();
+        addIndividualRLearnerPropToMap( propMap, "Abstol", "Abstol",
+            "Stop if the fit criterion falls below abstol, indicating an essentially perfect fit", true, false,
+            "string", null, learnerParams, "abstol", "1.0e-4" );
+        propertyList.put( "Abstol", propMap );
+
+        propMap = new LinkedHashMap<>();
+        addIndividualRLearnerPropToMap( propMap, "Reltol", "Reltol",
+            "Stop if the optimizer is unable to reduce the fit criternion by a factor of at " + "least 1 - reltol",
+            true, false, "string", null, learnerParams, "reltol", "1.0e-8" );
+        propertyList.put( "Reltol", propMap );
       }
     } catch ( Exception ex ) {
       throw new WekaException( ex );
@@ -575,6 +623,9 @@ public class RClassifierScheme extends SupervisedScheme {
         .equalsIgnoreCase( R_REGR_RANDOM_FOREST ) ) {
       assembleRLearnerOptionsSimpleList( parameters, b, new ArrayList<String>() );
     } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_GBM ) ) {
+      assembleRLearnerOptionsSimpleList( parameters, b, new ArrayList<String>() );
+    } else if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_NNET ) || m_mlrLearner.getReadable()
+        .equalsIgnoreCase( R_REGR_NNET ) ) {
       assembleRLearnerOptionsSimpleList( parameters, b, new ArrayList<String>() );
     }
 
@@ -821,7 +872,8 @@ public class RClassifierScheme extends SupervisedScheme {
   @Override public Object getConfiguredScheme( Instances trainingHeader ) throws Exception {
     Classifier finalScheme = adjustForSamplingAndPreprocessing( trainingHeader, m_scheme );
     if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) || m_mlrLearner.getReadable()
-        .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) ) {
+        .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) || m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_NNET ) ||
+    m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_NNET )) {
       boolean removeUselessInPlay = checkForFilter( finalScheme, ".RemoveUseless" );
       if ( !( finalScheme instanceof FilteredClassifier ) ) {
         finalScheme = new FilteredClassifier();

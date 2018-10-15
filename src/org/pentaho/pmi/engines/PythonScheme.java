@@ -37,10 +37,8 @@ import java.util.List;
  */
 public abstract class PythonScheme {
 
-  /**
-   * A list of those schemes that are not available in Python scikit-learn
-   */
-  protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental" );
+  /** A list of those schemes that are not available in Python scikit-learn */
+  protected static List<String> s_excludedSchemes = Arrays.asList( "Naive Bayes incremental", "Deep learning network" );
 
   /**
    * Static factory method for obtaining a {@code Scheme} instance that encapsulates a scikit-learn implementation of
@@ -51,8 +49,7 @@ public abstract class PythonScheme {
    * @throws Exception if a problem occurs
    */
   protected static Scheme getSupervisedPythonScheme( String schemeName ) throws Exception {
-    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes
-        .contains( schemeName ) ) {
+    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes.contains( schemeName ) ) {
       return new PythonClassifierScheme( schemeName );
     } else {
       // TODO clusterers?

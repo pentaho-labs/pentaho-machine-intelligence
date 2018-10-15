@@ -42,7 +42,9 @@ public class WekaEngine extends PMIEngine {
    */
   public static final String ENGINE_NAME = "Weka";
 
-  /** Engine class */
+  /**
+   * Engine class
+   */
   public static final String ENGINE_CLASS = WekaEngine.class.getCanonicalName();
 
   /**
@@ -74,7 +76,8 @@ public class WekaEngine extends PMIEngine {
    * @return true if Weka supports the named scheme
    */
   @Override public boolean supportsScheme( String schemeName ) {
-    return SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName );
+    return SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !WekaScheme.s_excludedSchemes
+        .contains( schemeName );
   }
 
   /**

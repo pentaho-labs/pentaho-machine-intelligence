@@ -43,7 +43,7 @@ public abstract class MLlibScheme {
   protected static List<String>
       s_excludedSchemes =
       Arrays.asList( "Naive Bayes incremental", "Support vector regression", "Multi-layer perceptron classifier",
-          "Multi-layer perceptron regressor" );
+          "Multi-layer perceptron regressor", "Deep learning network" );
 
   /**
    * Static factory method for obtaining {@code Scheme} objects encapsulating particular MLlib implementations

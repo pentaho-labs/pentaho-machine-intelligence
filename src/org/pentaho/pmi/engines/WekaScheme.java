@@ -26,6 +26,9 @@ import org.pentaho.pmi.Scheme;
 import org.pentaho.pmi.SupervisedScheme;
 import org.pentaho.pmi.UnsupportedSchemeException;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Scheme implementation for WEKA.
  *
@@ -33,6 +36,8 @@ import org.pentaho.pmi.UnsupportedSchemeException;
  * @version $Revision: $
  */
 public abstract class WekaScheme {
+
+  protected static List<String> s_excludedSchemes = Arrays.asList( "Deep learning network" );
 
   /**
    * Static factory method for obtaining a {@code Scheme} instance that encapsulates a WEKA implementation of the
@@ -43,12 +48,13 @@ public abstract class WekaScheme {
    * @throws UnsupportedSchemeException if a problem occurs
    */
   protected static Scheme getSupervisedWekaScheme( String schemeName ) throws UnsupportedSchemeException {
-    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) ) {
+    if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes
+        .contains( schemeName ) ) {
       return new WekaClassifierScheme( schemeName );
     } else {
       // TODO other types of schemes - clusterers etc.
     }
 
-    return null;
+    throw new UnsupportedSchemeException( "Weka engine does not support scheme: " + schemeName );
   }
 }
