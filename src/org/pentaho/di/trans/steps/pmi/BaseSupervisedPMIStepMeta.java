@@ -1011,7 +1011,7 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
   }
 
   public void clearStepIOMeta() {
-    ioMeta = null;
+    super.resetStepIoMeta();
   }
 
   @Override public void resetStepIoMeta() {
@@ -1019,12 +1019,15 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
   }
 
   @Override public void searchInfoAndTargetSteps( List<StepMeta> steps ) {
-    for ( StreamInterface stream : getStepIOMeta().getInfoStreams() ) {
+    List<StreamInterface> targetStreams = getStepIOMeta().getTargetStreams();
+
+    for ( StreamInterface stream : targetStreams ) {
       stream.setStepMeta( StepMeta.findStep( steps, (String) stream.getSubject() ) );
     }
   }
 
   @Override public StepIOMetaInterface getStepIOMeta() {
+    StepIOMetaInterface ioMeta = super.getStepIOMeta( false );
 
     if ( ioMeta == null ) {
       ioMeta = new StepIOMeta( true, true, false, true, false, false );
@@ -1033,6 +1036,7 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
       // if ( getEvalMode() == Evaluator.EvalMode.SEPARATE_TEST_SET ) {
       ioMeta.addStream( new Stream( StreamInterface.StreamType.INFO, null, "Test stream", StreamIcon.INFO, null ) );
       // }
+      setStepIOMeta( ioMeta );
     }
 
     return ioMeta;
