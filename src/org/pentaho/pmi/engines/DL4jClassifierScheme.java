@@ -42,7 +42,8 @@ public class DL4jClassifierScheme extends SupervisedScheme {
       // set epochs to 50?
 
       setOptionsForObject( (OptionHandler) m_underlyingScheme,
-          "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
+          "-iterator \"weka.dl4j.iterators.instance.DefaultInstanceIterator -bs 16\" "
+              + "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
               + "-name \\\"Dense layer\\\"\" -layer \"weka.dl4j.layers.OutputLayer "
               + "-lossFn \\\"weka.dl4j.lossfunctions.LossNegativeLogLikelihood \\\" -nOut 0 "
               + "-activation \\\"weka.dl4j.activations.ActivationSoftmax \\\" -name \\\"Output layer\\\"\"" );
@@ -58,7 +59,8 @@ public class DL4jClassifierScheme extends SupervisedScheme {
               + "-scheduleType EPOCH\\\"\" -weightInit XAVIER -weightNoise \"weka.dl4j.weightnoise.Disabled \"" );
     } else if ( schemeName.equalsIgnoreCase( "Linear regression" ) ) {
       setOptionsForObject( (OptionHandler) m_underlyingScheme,
-          "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
+          "-iterator \"weka.dl4j.iterators.instance.DefaultInstanceIterator -bs 16\" "
+              + "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
               + "-name \\\"Dense layer\\\"\" -layer \"weka.dl4j.layers.OutputLayer "
               + "-lossFn \\\"weka.dl4j.lossfunctions.LossMSE \\\" -nOut 0 "
               + "-activation \\\"weka.dl4j.activations.ActivationSoftmax \\\" -name \\\"Output layer\\\"\"" );
@@ -73,7 +75,8 @@ public class DL4jClassifierScheme extends SupervisedScheme {
               + "-scheduleType EPOCH\\\"\" -weightInit XAVIER -weightNoise \"weka.dl4j.weightnoise.Disabled \"" );
     } else if ( schemeName.equalsIgnoreCase( "Support vector classifier" ) ) {
       setOptionsForObject( (OptionHandler) m_underlyingScheme,
-          "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
+          "-iterator \"weka.dl4j.iterators.instance.DefaultInstanceIterator -bs 16\" "
+              + "-numEpochs 50 -layer \"weka.dl4j.layers.DenseLayer -nOut 0 -activation \\\"weka.dl4j.activations.ActivationReLU \\\" "
               + "-name \\\"Dense layer\\\"\" -layer \"weka.dl4j.layers.OutputLayer "
               + "-lossFn \\\"weka.dl4j.lossfunctions.LossHinge \\\" -nOut 0 "
               + "-activation \\\"weka.dl4j.activations.ActivationSoftmax \\\" -name \\\"Output layer\\\"\"" );
