@@ -1,0 +1,196 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.pentaho</groupId>
+  <artifactId>plugin-machine-intelligence</artifactId>
+  <version>1.4</version>
+  <name>Plugin Machine Intelligence for PDI</name>
+  
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <kettle.version>8.1.0.0-SNAPSHOT</kettle.version>
+    <weka.version>3.8.1.1</weka.version>
+    <weka.timeseries.version>1.0.25</weka.timeseries.version>
+    <weka.kfkettle.version>1.0.5</weka.kfkettle.version>
+    <xpp-min.version>1.1.3.4.O</xpp-min.version>
+    <buildId>${maven.build.timestamp}</buildId>
+    <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
+  </properties>
+  
+  <repositories>
+    <repository>
+      <id>pentaho-releases</id>
+      <url>http://repository.pentaho.org/artifactory/repo/</url>
+    </repository>
+    <repository>
+      <id>swt-repo</id>
+      <url>https://swt-repo.googlecode.com/svn/repo/</url>
+    </repository>
+  </repositories>
+  
+  <dependencies>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-engine</artifactId>
+      <version>${kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-core</artifactId>
+      <version>${kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>metastore</artifactId>
+      <version>${kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-ui-swt</artifactId>
+      <version>${kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-vfs-browser</artifactId>
+      <version>${kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.swt</groupId>
+      <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
+      <version>4.3</version>
+      <scope>provided</scope>
+    </dependency>
+<!--    <dependency>
+      <groupId>pentaho.weka</groupId>
+      <artifactId>pdm-ce</artifactId>
+      <version>${weka.version}</version>
+    </dependency> -->
+
+<!-- Bit of a hack here (through including a local version of this).
+     Unfortunately, changes to 3.8.1.1 in svn are not being picked up
+     in Pentaho builds of Weka/PDM 3.8.1.1 for some reason -->
+    <dependency>
+      <groupId>pdm-ce</groupId>
+      <artifactId>pdm-ce</artifactId>
+      <version>${weka.version}</version>
+      <scope>system</scope>
+      <systemPath>${basedir}/lib/pdm-ce-${weka.version}.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>nz.ac.waikato.cms.weka</groupId>
+      <artifactId>timeseriesForecasting</artifactId>
+      <version>${weka.timeseries.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>nz.ac.waikato.cms.weka</groupId>
+      <artifactId>kfKettle</artifactId>
+      <version>${weka.kfkettle.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>xpp3</groupId>
+      <artifactId>xpp3_min</artifactId>
+      <version>${xpp-min.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.5</version>
+      <scope>test</scope>
+    </dependency>    
+  </dependencies>
+  
+  
+  <build>
+    <resources>
+      <resource>
+	<targetPath>${project.build.outputDirectory}</targetPath>
+	<directory>${project.build.sourceDirectory}</directory>
+	<includes>
+	  <include>**/*.properties</include>
+	  <include>**/*.png</include>
+	</includes>
+      </resource>
+    </resources>
+    
+    <finalName>${project.artifactId}</finalName>
+    <plugins>
+      <plugin>
+	<artifactId>maven-dependency-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>copy-dependencies</goal>
+	    </goals>
+	    <configuration>
+	      <outputDirectory>${project.build.directory}/lib</outputDirectory>
+	    </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+      
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-assembly-plugin</artifactId>
+	<configuration>
+	  <descriptor>assembly.xml</descriptor>
+	  <finalName>${project.artifactId}-${project.version}</finalName>
+	  <archiverConfig>
+	    <fileMode>0644</fileMode>
+	    <directoryMode>0755</directoryMode>
+	    <defaultDirectoryMode>0755</defaultDirectoryMode>
+	  </archiverConfig>
+	</configuration>
+	<executions>
+	  <execution>
+	    <phase>package</phase>
+	    <goals>
+	      <goal>single</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+    
+    <pluginManagement>
+      <plugins>
+	<!-- Ignore/Execute plugin execution -->
+	<plugin>
+	  <groupId>org.eclipse.m2e</groupId>
+	  <artifactId>lifecycle-mapping</artifactId>
+	  <version>1.0.0</version>
+	  <configuration>
+	    <lifecycleMappingMetadata>
+	      <pluginExecutions>
+		<!-- copy-dependency plugin -->
+		<pluginExecution>
+		  <pluginExecutionFilter>
+		    <groupId>org.apache.maven.plugins</groupId>
+		    <artifactId>maven-dependency-plugin</artifactId>
+		    <versionRange>[1.0.0,)</versionRange>
+		    <goals>
+		      <goal>copy-dependencies</goal>
+		    </goals>
+		  </pluginExecutionFilter>
+		  <action>
+		    <ignore />
+		  </action>
+		</pluginExecution>
+	      </pluginExecutions>
+	    </lifecycleMappingMetadata>
+	  </configuration>
+	</plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

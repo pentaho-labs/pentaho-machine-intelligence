@@ -1,6 +1,6 @@
 test-lib
 lib-provided
-lib
+target
 libswt
 dist
 bin
