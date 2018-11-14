@@ -18,7 +18,7 @@ public class DL4jScheme {
    */
   protected static List<String>
       s_excludedSchemes =
-      Arrays.asList( "Naive Bayes", "Naive Bayes incremental", "Naive Bayes multinomial", "Decision tree classfier",
+      Arrays.asList( "Naive Bayes", "Naive Bayes incremental", "Naive Bayes multinomial", "Decision tree classifier",
           "Decision tree regressor", "Random forest classifier", "Random forest regressor", "Gradient boosted trees",
           "Support vector regressor", "Multi-layer perceptron classifier", "Multi-layer perceptron regressor");
 
