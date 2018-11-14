@@ -196,6 +196,13 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
   protected TextVar m_modelFilenameField;
 
   /**
+   * For loading IterativeClassifiers for continued training
+   */
+  protected TextVar m_modelLoadField;
+  protected Label m_modelLoadLab;
+  protected Button m_browseLoadModelButton;
+
+  /**
    * Field that appears only for incremental learning schemes - allows the initial n rows to be cached and used
    * initially to determine legal values for nominal fields before being passed to the scheme for training. This is
    * only necessary if there are incoming string fields for which the user intends to be treated as nominal but for
@@ -417,6 +424,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     } );
 
     checkWidgets();
+    getDataResumable( m_inputMeta );
     setSize();
 
     shell.open();
@@ -533,6 +541,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     if ( m_incrementalRowCacheField != null ) {
       meta.setInitialRowCacheForNominalValDetermination( m_incrementalRowCacheField.getText() );
     }
+
+    if ( m_modelLoadField != null ) {
+      meta.setResumableModelPath( m_modelLoadField.getText() );
+    } else {
+      meta.setResumableModelPath( "" );
+    }
   }
 
   /**
@@ -552,6 +566,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
       return ArffMeta.STRING;
     }
     return ArffMeta.DATE;
+  }
+
+  protected void getDataResumable( BaseSupervisedPMIStepMeta meta ) {
+    if ( m_modelLoadField != null ) {
+      m_modelLoadField.setText( meta.getResumableModelPath() );
+    }
   }
 
   protected boolean getData( BaseSupervisedPMIStepMeta meta ) {
@@ -1437,7 +1457,6 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
             m_schemeWidgets.put( propName, propVar );
           }
         }
-
       } catch ( Exception e ) {
         e.printStackTrace();
         ShowMessageDialog
@@ -1882,6 +1901,41 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
         m_outputIRMetricsCheck.setSelection( false );
       }
       m_testStepDropDown.setEnabled( false );
+    }
+
+    // Check for IterableClassifier && evaluation mode
+    if ( m_scheme.supportsResumableTraining() &&
+        m_rowsToProcessDropDown.getText().equalsIgnoreCase("ALL") && (
+        currentEvalSetting.equalsIgnoreCase( Evaluator.EvalMode.NONE.toString() ) || currentEvalSetting
+            .equalsIgnoreCase( Evaluator.EvalMode.SEPARATE_TEST_SET.toString() ) ) && m_modelLoadField == null ) {
+      m_modelLoadLab = new Label( m_schemeComposite, SWT.RIGHT );
+      m_modelLoadLab.setText( BaseMessages.getString( PKG, "BasePMIStepDialog.IterativeModelLoad.Label" ) );
+      props.setLook( m_modelLoadLab );
+      lastControl = m_modelFilenameField;
+      m_modelLoadLab.setLayoutData( getFirstLabelFormData() );
+
+      m_modelLoadField = new TextVar( transMeta, m_schemeComposite, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+      props.setLook( m_modelLoadField );
+      m_modelLoadField.setLayoutData( getFirstPromptFormData( m_modelLoadLab ) );
+
+      m_browseLoadModelButton = new Button( m_schemeComposite, SWT.PUSH );
+      props.setLook( m_browseLoadModelButton );
+      m_browseLoadModelButton
+          .setText( BaseMessages.getString( PKG, "BasePMIStepDialog.BrowseModelOutputDirectory.Button" ) );
+      m_browseLoadModelButton.setLayoutData( getSecondLabelFormData( m_modelLoadField ) );
+
+      // TODO
+
+      m_schemeGroup.layout();
+      m_schemeComposite.layout();
+    } else if ( m_modelLoadField != null ) {
+      m_modelLoadLab.dispose();
+      m_modelLoadField.dispose();
+      m_modelLoadLab = null;
+      m_modelLoadField = null;
+
+      m_schemeGroup.layout();
+      m_schemeComposite.layout();
     }
   }
 

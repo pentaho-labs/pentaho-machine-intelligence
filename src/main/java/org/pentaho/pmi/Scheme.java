@@ -150,6 +150,14 @@ public abstract class Scheme {
   public abstract boolean supportsIncrementalTraining();
 
   /**
+   * Subclass should return true if the scheme is an iterative batch learner that can resume training
+   * at some point in the future (potentially after serialization/deserialization of the model)
+   *
+   * @return true if the underlying learning scheme is resumable
+   */
+  public abstract boolean supportsResumableTraining();
+
+  /**
    * Subclass should return true if the scheme can handle string attributes directly
    *
    * @return true if the configured scheme can handle string attributes directly

@@ -240,6 +240,15 @@ public class PythonClassifierScheme extends SupervisedScheme {
   }
 
   /**
+   * scikit-learn schemes do not support resumable iterative training
+   *
+   * @return false
+   */
+  @Override public boolean supportsResumableTraining() {
+    return false;
+  }
+
+  /**
    * Returns true if the configured scheme can directly handle string attributes
    *
    * @return true if the configured scheme can directly handle string attributes

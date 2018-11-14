@@ -226,6 +226,12 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
    */
   protected String m_incrementalInitialCache = "100";
 
+  /**
+   * If a scheme is resumable (implements IterativeClassifier), then this field can be used to specify a model to load
+   * for continued training (eval modes NONE or SEPARATE_TEST only).
+   */
+  protected String m_resumableModelLoadPath = "";
+
   // --------- row handling --------------
 
   /**
@@ -554,6 +560,24 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
    */
   public String getModelFileName() {
     return m_modelFileName;
+  }
+
+  /**
+   * Set a path to a searialize resumable model to load (and continue training)
+   *
+   * @param resumableModelPath the path to the resumable model
+   */
+  public void setResumableModelPath(String resumableModelPath) {
+    m_resumableModelLoadPath = resumableModelPath;
+  }
+
+  /**
+   * Get the path to a searialize resumable model to load (and continue training)
+   *
+   * @return the path to the resumable model
+   */
+  public String getResumableModelPath() {
+    return m_resumableModelLoadPath;
   }
 
   // ------------- evaluation opts -------------------

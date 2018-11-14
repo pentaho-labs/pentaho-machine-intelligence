@@ -124,6 +124,15 @@ public class DL4jClassifierScheme extends SupervisedScheme {
     return false;
   }
 
+  /**
+   * WekaDl4jMlpClassifier is an IterativeClassifier and therefore supports resumable training
+   *
+   * @return true
+   */
+  @Override public boolean supportsResumableTraining() {
+    return true;
+  }
+
   @Override public boolean canHandleStringAttributes() {
     // TODO really need to make a reflective call to see if the instance iterator is an
     // ImageInstanceIterator or a text-related iterator. This is the only time that string attributes

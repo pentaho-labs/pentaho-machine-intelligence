@@ -26,6 +26,7 @@ import org.pentaho.pmi.SchemeUtils;
 import org.pentaho.pmi.SupervisedScheme;
 import org.pentaho.pmi.UnsupportedSchemeException;
 import weka.classifiers.Classifier;
+import weka.classifiers.IterativeClassifier;
 import weka.classifiers.UpdateableClassifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.bayes.NaiveBayesMultinomial;
@@ -225,6 +226,16 @@ public class WekaClassifierScheme extends SupervisedScheme {
   @Override public boolean supportsIncrementalTraining() {
     return m_underlyingScheme instanceof UpdateableClassifier;
   }
+
+  /**
+   * Returns true if the underlying WEKA classifier/regressor implements IterativeClassifier
+   *
+   * @return if the underlying classifier implements IterativeClassifier (and thus can resume batch iteration).
+   */
+  @Override public boolean supportsResumableTraining() {
+    return m_underlyingScheme instanceof IterativeClassifier;
+  }
+
 
   /**
    * Returns true if the configured scheme can directly handle string attributes
