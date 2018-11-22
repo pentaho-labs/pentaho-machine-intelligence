@@ -215,6 +215,16 @@ public abstract class Scheme {
   public abstract Object getConfiguredScheme( Instances trainingHeader ) throws Exception;
 
   /**
+   * Initialize this Scheme with the underlying predictive scheme. Implementations should just copy the option settings
+   * of the supplied underlying scheme in order to avoid consuming memory by storing a reference to a (potentially) large
+   * trained model object. The actual trained model will be loaded at transformation execution time and training resumed.
+   *
+   * @param scheme the underlying scheme to initialize with
+   * @throws Exception if the supplied underlying scheme does not match this Scheme
+   */
+  public abstract void setConfiguredScheme( Object scheme ) throws Exception;
+
+  /**
    * Get the name of this scheme.
    *
    * @return

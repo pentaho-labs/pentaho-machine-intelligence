@@ -837,8 +837,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     }
   }
 
-  protected List<Object> loadModel( String modelPath, LogChannelInterface log ) throws KettleException {
-    // TODO
+  public static List<Object> loadModel( String modelPath, LogChannelInterface log ) throws KettleException {
     if ( modelPath.toLowerCase().startsWith( "file:" ) ) {
       try {
         modelPath = modelPath.replace( " ", "%20" );

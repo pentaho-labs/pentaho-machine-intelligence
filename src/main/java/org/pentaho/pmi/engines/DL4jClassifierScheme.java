@@ -176,4 +176,14 @@ public class DL4jClassifierScheme extends SupervisedScheme {
 
     return adjustForSamplingAndPreprocessing( trainingHeader, m_underlyingScheme );
   }
+
+  public void setConfiguredScheme( Object scheme ) throws Exception {
+    if ( !scheme.getClass().getCanonicalName().equals( "weka.classifiers.functions.Dl4jMlpClassifier" ) ) {
+      throw new Exception( "Supplied configured scheme is not a Dl4jMlpClassifier" );
+    }
+    // Just copy over option settings from the supplied scheme, so that we avoid consuming
+    // memory for large trained models (model gets loaded again when transformation is executed)
+    ((OptionHandler) m_underlyingScheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    // m_underlyingScheme = (Classifier) scheme;
+  }
 }
