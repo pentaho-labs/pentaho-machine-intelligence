@@ -859,7 +859,7 @@ public class PMIFlowExecutorData extends BaseStepData {
       // is being used and they are in binary string format)
       if ( org.pentaho.di.core.util.Utils.isEmpty( m_injectArffMetas[index].getNominalVals() ) ) {
         String sval = fieldMeta.getString( val );
-        if ( sval != null ) {
+        if ( !org.pentaho.di.core.util.Utils.isEmpty( sval ) ) {
           sorted.add( sval );
         }
       } else {
