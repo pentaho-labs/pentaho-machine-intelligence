@@ -510,8 +510,8 @@ public class PMIFlowExecutorData extends BaseStepData {
     inputConnName = vars.environmentSubstitute( inputConnName );
     if ( streaming ) {
       if ( !inputConnName.equalsIgnoreCase( StepManager.CON_INSTANCE ) ) {
-        throw new KettleException(
-            BaseMessages.getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Error.ConnMustBeInstanceForStreaming" ) );
+        throw new KettleException( BaseMessages
+            .getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Error.ConnMustBeInstanceForStreaming" ) );
       }
       m_streamData = true;
     }
@@ -557,7 +557,8 @@ public class PMIFlowExecutorData extends BaseStepData {
     StepManagerImpl manager = flowToUse.findStep( outputStepName );
     if ( manager == null ) {
       throw new KettleStepException( BaseMessages
-          .getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Error.UnableToFindOutputStepInFlow", outputStepName ) );
+          .getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Error.UnableToFindOutputStepInFlow",
+              outputStepName ) );
     }
     manager.getManagedStep();
 
@@ -858,7 +859,9 @@ public class PMIFlowExecutorData extends BaseStepData {
       // is being used and they are in binary string format)
       if ( org.pentaho.di.core.util.Utils.isEmpty( m_injectArffMetas[index].getNominalVals() ) ) {
         String sval = fieldMeta.getString( val );
-        sorted.add( sval );
+        if ( !org.pentaho.di.core.util.Utils.isEmpty( sval ) ) {
+          sorted.add( sval );
+        }
       } else {
         sorted.add( val.toString() );
       }
@@ -886,8 +889,8 @@ public class PMIFlowExecutorData extends BaseStepData {
 
   protected void injectDataBatch( ExecutionFinishedCallback finishedCallback, RowMetaInterface inputMeta,
       PMIFlowExecutorMeta kfMeta, VariableSpace vars ) throws KettleException, WekaException {
-    m_log.logBasic(
-        BaseMessages.getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Info.ConstructingInstancesFromReservoir" ) );
+    m_log.logBasic( BaseMessages
+        .getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Info.ConstructingInstancesFromReservoir" ) );
     Instances dataSet = reservoirToInstances( inputMeta );
     if ( kfMeta.getSetClass() ) {
       Attribute classA = dataSet.attribute( vars.environmentSubstitute( kfMeta.getClassAttributeName() ) );
@@ -900,8 +903,8 @@ public class PMIFlowExecutorData extends BaseStepData {
       }
     }
 
-    m_log
-        .logBasic( BaseMessages.getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Info.InjectingInstancesIntoKF" ) );
+    m_log.logBasic(
+        BaseMessages.getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Info.InjectingInstancesIntoKF" ) );
 
     Data data = new Data( vars.environmentSubstitute( kfMeta.getInjectConnectionName() ), dataSet );
     data.setPayloadElement( StepManager.CON_AUX_DATA_SET_NUM, 1 );
@@ -929,8 +932,8 @@ public class PMIFlowExecutorData extends BaseStepData {
   protected void flushStreamingBuffer( RowMetaInterface inputMeta, Object[] inputRow ) throws KettleException {
     if ( m_hasNominalAtts && !m_bufferingComplete ) {
       m_bufferingComplete = true;
-      m_log.logBasic(
-          BaseMessages.getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Info.StreamingBufferFullInjectingRows" ) );
+      m_log.logBasic( BaseMessages
+          .getString( PMIFlowExecutorMeta.PKG, "KnowledgeFlowData.Info.StreamingBufferFullInjectingRows" ) );
 
       m_streamingHeader = createHeader( inputMeta );
 
