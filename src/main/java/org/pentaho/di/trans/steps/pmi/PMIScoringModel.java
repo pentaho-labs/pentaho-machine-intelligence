@@ -25,6 +25,7 @@ package org.pentaho.di.trans.steps.pmi;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.dm.commons.LogAdapter;
 import weka.classifiers.Classifier;
+import weka.classifiers.evaluation.Evaluation;
 import weka.clusterers.Clusterer;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -180,10 +181,10 @@ public abstract class PMIScoringModel implements Serializable {
 
   /**
    * Static factory method to create an instance of an appropriate subclass of
-   * WekaScoringModel given a Weka model.
+   * PMIScoringModel given a Weka model.
    *
    * @param model a Weka model
-   * @return an appropriate WekaScoringModel for this type of Weka model
+   * @return an appropriate PMIScoringModel for this type of Weka model
    * @throws Exception if an error occurs
    */
   public static PMIScoringModel createScorer( Object model ) throws Exception {
@@ -195,4 +196,22 @@ public abstract class PMIScoringModel implements Serializable {
     throw new Exception( "Unsupported model type: " + model.getClass().getCanonicalName() );
   }
 
+  /**
+   * Static factory method for creating a PMIClassifierModel that is initialized with the
+   * underlying classifier and an evaluation object configured with training class prior information.
+   *
+   * @param model          the classifier model
+   * @param forClassPriors an Evaluation object
+   * @return a PMIScoringModel
+   * @throws Exception if an error occurs
+   */
+  public static PMIScoringModel createScorer( Object model, Evaluation forClassPriors ) throws Exception {
+    if ( !( model instanceof Classifier ) ) {
+      throw new Exception( "Model must be a Classifier!" );
+    }
+
+    PMIScoringClassifier classifier = new PMIScoringClassifier( model );
+    classifier.setEvaluation( forClassPriors );
+    return classifier;
+  }
 }

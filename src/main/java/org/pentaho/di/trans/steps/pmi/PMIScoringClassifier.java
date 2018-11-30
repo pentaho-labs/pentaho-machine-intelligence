@@ -24,6 +24,7 @@ package org.pentaho.di.trans.steps.pmi;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.UpdateableClassifier;
+import weka.classifiers.evaluation.Evaluation;
 import weka.classifiers.pmml.consumer.PMMLClassifier;
 import weka.core.BatchPredictor;
 import weka.core.Instance;
@@ -39,6 +40,11 @@ public class PMIScoringClassifier extends PMIScoringModel {
 
   // The encapsulated classifier
   private Classifier m_model;
+
+  /**
+   * Optional evaluation object that contains training class priors
+   */
+  private Evaluation m_evalForPriors;
 
   /**
    * Creates a new <code>PMIScoringClassifier</code> instance.
@@ -65,6 +71,25 @@ public class PMIScoringClassifier extends PMIScoringModel {
    */
   public Object getModel() {
     return m_model;
+  }
+
+  /**
+   * Set an evaluation object that has been initialized with training class prior info
+   *
+   * @param eval an Evaluation object
+   */
+  public void setEvaluation( Evaluation eval ) {
+    m_evalForPriors = eval;
+  }
+
+  /**
+   * Get an evaluation object that has been initialized with training class prior info. May
+   * return null if no evaluation object is available
+   *
+   * @return
+   */
+  public Evaluation getEvaluation() {
+    return m_evalForPriors;
   }
 
   /**
