@@ -171,7 +171,7 @@ public class PMIScoring extends BaseStep implements StepInterface {
       if ( !m_meta.getEvaluateRatherThanScore() && m_data.getModel().isBatchPredictor() && !m_meta
           .getFileNameFromField() && m_batch.size() > 0 ) {
         try {
-          outputBatchRows(true);
+          outputBatchRows( true );
         } catch ( Exception ex ) {
           throw new KettleException(
               BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemWhileGettingPredictionsForBatch" ),
@@ -183,7 +183,7 @@ public class PMIScoring extends BaseStep implements StepInterface {
         // generate the output row
         try {
           if ( m_data.getModel().isBatchPredictor() ) {
-            outputBatchRows(true);
+            outputBatchRows( true );
           } else {
             Object[] outputRow = m_data.evaluateForRow( getInputRowMeta(), m_data.getOutputRowMeta(), null, m_meta );
             putRow( m_data.getOutputRowMeta(), outputRow );
@@ -225,9 +225,16 @@ public class PMIScoring extends BaseStep implements StepInterface {
 
       if ( m_meta.getFileNameFromField() ) {
         // clear the main model
+        m_data.getModel().done();
         m_data.setModel( null );
+        m_data.setDefaultModel( null );
+        if ( m_modelCache != null ) {
+          m_modelCache.clear();
+        }
       } else {
         m_data.getModel().done();
+        m_data.setModel( null );
+        m_data.setDefaultModel( null );
       }
 
       setOutputDone();
@@ -383,7 +390,7 @@ public class PMIScoring extends BaseStep implements StepInterface {
           m_batch.add( r );
 
           if ( m_batch.size() == m_batchScoringSize ) {
-            outputBatchRows(false);
+            outputBatchRows( false );
           }
         } catch ( Exception ex ) {
           throw new KettleException(
@@ -415,7 +422,7 @@ public class PMIScoring extends BaseStep implements StepInterface {
     return true;
   }
 
-  protected void outputBatchRows(boolean finished) throws Exception {
+  protected void outputBatchRows( boolean finished ) throws Exception {
     // get predictions for the batch
     Object[][]
         outputRows =
@@ -423,7 +430,7 @@ public class PMIScoring extends BaseStep implements StepInterface {
             m_data.evaluateForRows( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta ) :
             m_data.generatePredictions( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta );
 
-    if (finished && m_meta.getEvaluateRatherThanScore()) {
+    if ( finished && m_meta.getEvaluateRatherThanScore() ) {
       // make sure we get the output row that contains eval
       m_batch.clear();
       outputRows = m_data.evaluateForRows( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta );

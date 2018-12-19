@@ -204,6 +204,32 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
   protected Map<String, Classifier> m_incrementalClassifier;
   // protected Classifier m_incrementalClassifier;
 
+  protected void cleanup() {
+    if ( m_evaluation != null ) {
+      m_evaluation.clear();
+    }
+    if ( m_finalModels != null ) {
+      m_finalModels.clear();
+    }
+    if ( m_trainingHeaders != null ) {
+      m_trainingHeaders.clear();
+    }
+    if ( m_separateTestSetBatchPredictorRows != null ) {
+      m_separateTestSetBatchPredictorRows.clear();
+    }
+    if ( m_initialIncrementalRows != null ) {
+      m_initialIncrementalRows.clear();
+    }
+    m_trainingSampler = null;
+
+    if ( m_trainingRows != null ) {
+      m_trainingRows.clear();
+    }
+    if ( m_trainingFieldIndexes != null ) {
+      m_trainingFieldIndexes.clear();
+    }
+  }
+
   protected void checkForIncrementalTraining( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log )
       throws Exception {
     m_trainingIncrementally =

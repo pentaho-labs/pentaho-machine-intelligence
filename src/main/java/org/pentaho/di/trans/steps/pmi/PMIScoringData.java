@@ -136,7 +136,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
    */
   public void setModel( PMIScoringModel model ) {
     m_model = model;
-    if ( m_eval != null && model.isSupervisedLearningModel() ) {
+    if ( model != null && m_eval != null && model.isSupervisedLearningModel() ) {
       m_eval.setTrainedClassifier( (Classifier) model.getModel() );
     }
   }

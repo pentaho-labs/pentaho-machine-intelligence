@@ -490,6 +490,7 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
     }
 
     if ( m_trainingDone && m_testingDone ) {
+      m_data.cleanup();
       setOutputDone();
       return false;
     }
