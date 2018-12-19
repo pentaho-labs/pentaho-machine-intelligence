@@ -204,12 +204,31 @@ public class Evaluator {
   }
 
   /**
+   * Set an initialized Evaluation object to use. Useful for evaluating loaded serialized models that
+   * have an Evaluation object configured with training data class priors.
+   *
+   * @param eval the Evaluation object to use.
+   */
+  public void setEvaluation( Evaluation eval ) {
+    m_eval = eval;
+  }
+
+  /**
    * Get the classifier template object
    *
    * @return the classifier template object
    */
   public Classifier getClassifierTemplate() {
     return m_templateClassifier;
+  }
+
+  /**
+   * Return the training data
+   *
+   * @return the training data
+   */
+  public Instances getTrainingData() {
+    return m_trainingData;
   }
 
   /**
