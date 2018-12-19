@@ -44,6 +44,7 @@ import org.pentaho.pmi.PMIEngine;
 import org.pentaho.pmi.Scheme;
 import weka.classifiers.Classifier;
 import weka.classifiers.UpdateableClassifier;
+import weka.classifiers.evaluation.Evaluation;
 import weka.core.Attribute;
 import weka.core.BatchPredictor;
 import weka.core.DenseInstance;
@@ -202,6 +203,32 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
   // protected Evaluator m_prequentialEvaluator;
   protected Map<String, Classifier> m_incrementalClassifier;
   // protected Classifier m_incrementalClassifier;
+
+  protected void cleanup() {
+    if ( m_evaluation != null ) {
+      m_evaluation.clear();
+    }
+    if ( m_finalModels != null ) {
+      m_finalModels.clear();
+    }
+    if ( m_trainingHeaders != null ) {
+      m_trainingHeaders.clear();
+    }
+    if ( m_separateTestSetBatchPredictorRows != null ) {
+      m_separateTestSetBatchPredictorRows.clear();
+    }
+    if ( m_initialIncrementalRows != null ) {
+      m_initialIncrementalRows.clear();
+    }
+    m_trainingSampler = null;
+
+    if ( m_trainingRows != null ) {
+      m_trainingRows.clear();
+    }
+    if ( m_trainingFieldIndexes != null ) {
+      m_trainingFieldIndexes.clear();
+    }
+  }
 
   protected void checkForIncrementalTraining( BaseSupervisedPMIStepMeta stepMeta, LogChannelInterface log )
       throws Exception {
@@ -587,7 +614,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
           m_finalModels.put( evalKey, trainedFullModel );
 
           // save model to file
-          saveModel( trainedFullModel, trainingHeader, stepMeta, log );
+          saveModel( trainedFullModel, evaluator.getTrainingData(), stepMeta, log );
 
           // output row is textual model?
           if ( stepMeta.getEvalMode() == Evaluator.EvalMode.NONE ) {
@@ -806,7 +833,15 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     try {
       log.logBasic( BaseMessages.getString( PKG, "BasePMIStep.Info.SavingModel", model.getClass().getCanonicalName(),
           m_modelOutputPath + File.separator + fileName ) );
-      SerializationHelper.writeAll( m_modelOutputPath + File.separator + fileName, new Object[] { model, header } );
+      // if there is actual data, then also serialize an Evaluation object (for training priors)
+      Evaluation eval = null;
+      if ( header.numInstances() > 0 ) {
+        eval = new Evaluation( header );
+        header = new Instances( header, 0 );
+        log.logDetailed( "Storing training data class priors with saved model" );
+      }
+      SerializationHelper.writeAll( m_modelOutputPath + File.separator + fileName,
+          ( eval == null ? new Object[] { model, header } : new Object[] { model, header, eval } ) );
     } catch ( Exception e ) {
       throw new KettleException( e );
     }
@@ -817,7 +852,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
 
     Instances dataset = new Instances( header, data.size() );
     for ( Object[] row : data ) {
-      if (row != null) {
+      if ( row != null ) {
         Instance toAdd = constructInstance( dataset, inputRowMeta, row, streamFieldLookup, stepMeta );
         dataset.add( toAdd );
       } else {
@@ -954,7 +989,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
 
     ValueMetaInterface vm = rowMetaInterface.getValueMeta( fieldIndex );
     for ( Object[] row : data ) {
-      if (row != null) {
+      if ( row != null ) {
         if ( !vm.isNull( row[fieldIndex] ) ) {
           sortedVals.add( vm.getString( row[fieldIndex] ) );
         }

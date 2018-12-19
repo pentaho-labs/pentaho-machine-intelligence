@@ -34,6 +34,7 @@ import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.pmi.Evaluator;
 import weka.classifiers.Classifier;
+import weka.classifiers.evaluation.Evaluation;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -135,7 +136,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
    */
   public void setModel( PMIScoringModel model ) {
     m_model = model;
-    if ( m_eval != null && model.isSupervisedLearningModel() ) {
+    if ( model != null && m_eval != null && model.isSupervisedLearningModel() ) {
       m_eval.setTrainedClassifier( (Classifier) model.getModel() );
     }
   }
@@ -200,6 +201,9 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
         new Evaluator( Evaluator.EvalMode.SEPARATE_TEST_SET, 1, scoringMeta.getOutputAUCMetrics(),
             scoringMeta.getOutputIRMetrics() );
     m_eval.initialize( m_model.getHeader(), (Classifier) m_model.getModel() );
+    if ( m_model.isSupervisedLearningModel() && ( (PMIScoringClassifier) m_model ).getEvaluation() != null ) {
+      m_eval.setEvaluation( ( (PMIScoringClassifier) m_model ).getEvaluation() );
+    }
   }
 
   /**
@@ -269,6 +273,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
 
     Object model = null;
     Instances header = null;
+    Evaluation classPriorEval = null;
     int[] ignoredAttsForClustering = null;
 
     modelFile = space.environmentSubstitute( modelFile );
@@ -317,6 +322,15 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
       // try and grab the header
       header = (Instances) oi.readObject();
 
+      // try and grab an Eval object for training data class priors
+      if ( model instanceof Classifier ) {
+        try {
+          classPriorEval = (Evaluation) oi.readObject();
+        } catch ( Exception ex ) {
+          // ignore
+        }
+      }
+
       if ( model instanceof weka.clusterers.Clusterer ) {
         // try and grab any attributes to be ignored during clustering
         try {
@@ -328,7 +342,10 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
       oi.close();
     }
 
-    PMIScoringModel wsm = PMIScoringModel.createScorer( model );
+    PMIScoringModel
+        wsm =
+        classPriorEval == null ? PMIScoringModel.createScorer( model ) :
+            PMIScoringModel.createScorer( model, classPriorEval );
     wsm.setHeader( header );
     if ( wsm instanceof PMIScoringClusterer && ignoredAttsForClustering != null ) {
       ( (PMIScoringClusterer) wsm ).setAttributesToIgnore( ignoredAttsForClustering );

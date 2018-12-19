@@ -144,7 +144,7 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
           String trainingInputStepName = environmentSubstitute( m_meta.getTrainingStepInputName() );
           boolean trainingMatch = false;
           for ( StreamInterface input : infoStreams ) {
-            if ( input.getStepname().equals( trainingInputStepName ) ) {
+            if ( input.getSubject().toString().equals( trainingInputStepName ) ) {
               trainingMatch = true;
               m_data.m_trainingStream = input;
               break;
@@ -160,7 +160,7 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
             String testInputStepName = environmentSubstitute( m_meta.getTestingStepInputName() );
             boolean testMatch = false;
             for ( StreamInterface input : infoStreams ) {
-              if ( input.getStepname().equals( testInputStepName ) ) {
+              if ( input.getSubject().toString().equals( testInputStepName ) ) {
                 testMatch = true;
                 m_data.m_testStream = input;
                 break;
@@ -175,12 +175,12 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
           m_data.m_trainingStream = infoStreams.get( 0 );
         }
 
-        m_data.m_trainingRowMeta = getTransMeta().getStepFields( m_data.m_trainingStream.getStepname() );
+        m_data.m_trainingRowMeta = getTransMeta().getStepFields( (String) m_data.m_trainingStream.getSubject() );
         List<String> trainingFieldNames = Arrays.asList( m_data.m_trainingRowMeta.getFieldNames() );
         m_data.m_testingRowMeta = null;
         List<String> testingFieldNames = null;
         if ( m_data.m_testStream != null ) {
-          m_data.m_testingRowMeta = getTransMeta().getStepFields( m_data.m_testStream.getStepname() );
+          m_data.m_testingRowMeta = getTransMeta().getStepFields( (String) m_data.m_testStream.getSubject() );
           testingFieldNames = Arrays.asList( m_data.m_testingRowMeta.getFieldNames() );
         }
 
@@ -452,9 +452,9 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
       m_data.m_outputRowMeta = new RowMeta();
       BaseSupervisedPMIStepData.establishOutputRowMeta( m_data.m_outputRowMeta, this, m_meta );
 
-      m_data.m_trainingRowSet = findInputRowSet( m_data.m_trainingStream.getStepname() );
+      m_data.m_trainingRowSet = findInputRowSet( (String) m_data.m_trainingStream.getSubject() );
       if ( m_data.m_testStream != null ) {
-        m_data.m_testRowSet = findInputRowSet( m_data.m_testStream.getStepname() );
+        m_data.m_testRowSet = findInputRowSet( (String) m_data.m_testStream.getSubject() );
       }
     }
 
@@ -490,6 +490,7 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
     }
 
     if ( m_trainingDone && m_testingDone ) {
+      m_data.cleanup();
       setOutputDone();
       return false;
     }
