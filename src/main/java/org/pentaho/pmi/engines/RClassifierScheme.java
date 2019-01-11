@@ -175,6 +175,16 @@ public class RClassifierScheme extends SupervisedScheme {
     m.invoke( mlrClassifier, tag );
   }
 
+  public Tag getLearnerFromScheme( Classifier mlrClassifier )
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method m = mlrClassifier.getClass().getDeclaredMethod( "getRLearner" );
+
+    Object result = m.invoke( mlrClassifier );
+    SelectedTag tag = (SelectedTag) result;
+
+    return tag.getSelectedTag();
+  }
+
   protected void setLearnerOptsOnScheme( Classifier mlrClassifier, String learnerOpts )
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method m = mlrClassifier.getClass().getDeclaredMethod( "setLearnerParams", String.class );
@@ -214,6 +224,15 @@ public class RClassifierScheme extends SupervisedScheme {
    */
   @Override public boolean supportsIncrementalTraining() {
     return false; // incremental training is not supported
+  }
+
+  /**
+   * MLR schemes do not support resumable iterative training
+   *
+   * @return false
+   */
+  @Override public boolean supportsResumableTraining() {
+    return false;
   }
 
   /**
@@ -872,8 +891,8 @@ public class RClassifierScheme extends SupervisedScheme {
   @Override public Object getConfiguredScheme( Instances trainingHeader ) throws Exception {
     Classifier finalScheme = adjustForSamplingAndPreprocessing( trainingHeader, m_scheme );
     if ( m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_LIBLINEARL1LOGREG ) || m_mlrLearner.getReadable()
-        .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) || m_mlrLearner.getReadable().equalsIgnoreCase( R_CLASSIF_NNET ) ||
-    m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_NNET )) {
+        .equalsIgnoreCase( R_CLASSIF_LIBLINEARL2LOGREG ) || m_mlrLearner.getReadable()
+        .equalsIgnoreCase( R_CLASSIF_NNET ) || m_mlrLearner.getReadable().equalsIgnoreCase( R_REGR_NNET ) ) {
       boolean removeUselessInPlay = checkForFilter( finalScheme, ".RemoveUseless" );
       if ( !( finalScheme instanceof FilteredClassifier ) ) {
         finalScheme = new FilteredClassifier();
@@ -894,5 +913,29 @@ public class RClassifierScheme extends SupervisedScheme {
     }
 
     return finalScheme;
+  }
+
+  public void setConfiguredScheme( Object scheme ) throws Exception {
+    if ( scheme instanceof FilteredClassifier ) {
+      scheme = ( (FilteredClassifier) scheme ).getClassifier();
+    }
+
+    String schemeClass = scheme.getClass().getCanonicalName();
+    if ( !schemeClass.equals( "weka.classifiers.mlr.MLRClassifier" ) ) {
+      throw new Exception( "Supplied configured scheme is not of the correct type" );
+    }
+
+    Tag configuredSchemeTag = getLearnerFromScheme( (Classifier) scheme );
+    if ( m_mlrLearner.getID() != configuredSchemeTag.getID() ) {
+      throw new Exception(
+          "Configured scheme type '" + configuredSchemeTag.getReadable() + "' is not equal to " + m_mlrLearner
+              .getReadable() );
+    }
+
+    // Just copy over option settings from the supplied scheme, so that we avoid consuming
+    // memory for large trained models (model gets loaded again when transformation is executed)
+    ((OptionHandler) m_scheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    // m_scheme = (Classifier) scheme;
+    m_mlrLearner = configuredSchemeTag;
   }
 }

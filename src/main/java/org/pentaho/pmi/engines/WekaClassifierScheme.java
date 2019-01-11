@@ -26,6 +26,7 @@ import org.pentaho.pmi.SchemeUtils;
 import org.pentaho.pmi.SupervisedScheme;
 import org.pentaho.pmi.UnsupportedSchemeException;
 import weka.classifiers.Classifier;
+import weka.classifiers.IterativeClassifier;
 import weka.classifiers.UpdateableClassifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.bayes.NaiveBayesMultinomial;
@@ -34,6 +35,7 @@ import weka.classifiers.functions.LinearRegression;
 import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.functions.SGD;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.meta.LogitBoost;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.M5P;
@@ -160,19 +162,10 @@ public class WekaClassifierScheme extends SupervisedScheme {
       m_underlyingScheme = new SGD();
       ( (SGD) m_underlyingScheme ).setLossFunction( new SelectedTag( SGD.HINGE, SGD.TAGS_SELECTION ) );
       // user can adjust loss function to epsilon insensitive for SVM regression
-    } else if ( schemeName.equalsIgnoreCase( "Incremental Naive Bayes" ) ) {
-      m_underlyingScheme = new NaiveBayes();
     } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron classifier" ) || schemeName
         .equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
       m_underlyingScheme = new MultilayerPerceptron();
-    } /* else if ( schemeName.equalsIgnoreCase( "Deep learning network" ) ) {
-      try {
-        m_underlyingScheme =
-            (Classifier) WekaPackageClassLoaderManager.objectForName( "weka.classifiers.functions.Dl4jMlpClassifier" );
-      } catch ( Exception e ) {
-        throw new UnsupportedSchemeException( e );
-      }
-    } */ else {
+    } else {
       throw new UnsupportedSchemeException(
           "Classification/regression scheme '" + schemeName + "' is unsupported in Weka" );
     }
@@ -224,6 +217,15 @@ public class WekaClassifierScheme extends SupervisedScheme {
    */
   @Override public boolean supportsIncrementalTraining() {
     return m_underlyingScheme instanceof UpdateableClassifier;
+  }
+
+  /**
+   * Returns true if the underlying WEKA classifier/regressor implements IterativeClassifier
+   *
+   * @return if the underlying classifier implements IterativeClassifier (and thus can resume batch iteration).
+   */
+  @Override public boolean supportsResumableTraining() {
+    return m_underlyingScheme instanceof IterativeClassifier;
   }
 
   /**
@@ -299,5 +301,50 @@ public class WekaClassifierScheme extends SupervisedScheme {
       ( (MultilayerPerceptron) m_underlyingScheme ).setGUI( false ); // make sure GUI is not turned on!
     }
     return adjustForSamplingAndPreprocessing( incomingHeader, m_underlyingScheme );
+  }
+
+  @Override public void setConfiguredScheme( Object scheme ) throws Exception {
+    if ( scheme instanceof FilteredClassifier ) {
+      scheme = ( (FilteredClassifier) scheme ).getClassifier();
+    }
+    String schemeClass = scheme.getClass().getCanonicalName();
+    boolean schemeOk = true;
+    if ( m_schemeName.equalsIgnoreCase( "logistic regression" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.functions.LogisticRegression" );
+    } else if ( m_schemeName.equalsIgnoreCase( "naive bayes" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.bayes.NaiveBayes" );
+    } else if ( m_schemeName.equalsIgnoreCase( "naive bayes multinomial" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.bayes.NaiveBayesMultinomial" );
+    } else if ( m_schemeName.equalsIgnoreCase( "naive bayes incremental" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.bayes.NaiveBayesUpdatable" );
+    } else if ( m_schemeName.equalsIgnoreCase( "decision tree classifier" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.trees.J48" );
+    } else if ( m_schemeName.equalsIgnoreCase( "decision tree regressor" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.trees.M5P" );
+    } else if ( m_schemeName.equalsIgnoreCase( "linear regression" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.functions.LinearRegression" );
+    } else if ( m_schemeName.equalsIgnoreCase( "support vector classifier" ) || m_schemeName
+        .equalsIgnoreCase( "support vector regressor" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.functions.LibSVM" );
+    } else if ( m_schemeName.equalsIgnoreCase( "random forest" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.trees.RandomForest" );
+    } else if ( m_schemeName.equalsIgnoreCase( "gradient boosted trees" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.meta.LogitBoost" );
+    } else if ( m_schemeName.equalsIgnoreCase( "multi-layer perceptron classifier" ) || m_schemeName
+        .equalsIgnoreCase( "multi-layer perceptron regressor" ) ) {
+      schemeOk = schemeClass.equals( "weka.classifiers.functions.MultilayerPerceptron" );
+    }
+
+    if ( !schemeOk ) {
+      throw new Exception( "Supplied configured scheme is not a " + m_schemeName );
+    }
+
+    // Just copy over option settings from the supplied scheme, so that we avoid consuming
+    // memory for large trained models (model gets loaded again when transformation is executed)
+    ( (OptionHandler) m_underlyingScheme ).setOptions( ( (OptionHandler) scheme ).getOptions() );
+    //m_underlyingScheme = (Classifier) scheme;
+
+    // TODO if a FilteredClassifier was involved, then really need to examine filters in order to
+    // set m_preprocessingConfigs and m_samplingConfigs
   }
 }

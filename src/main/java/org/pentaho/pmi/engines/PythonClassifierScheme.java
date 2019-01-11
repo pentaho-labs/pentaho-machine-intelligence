@@ -159,6 +159,16 @@ public class PythonClassifierScheme extends SupervisedScheme {
     m.invoke( scikitLearnClassifier, tag );
   }
 
+  protected int getLearnerFromScheme( Classifier scikitLearnClassifier )
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method m = scikitLearnClassifier.getClass().getDeclaredMethod( "getLearner" );
+
+    Object result = m.invoke( scikitLearnClassifier );
+    SelectedTag tag = (SelectedTag) result;
+
+    return tag.getSelectedTag().getID();
+  }
+
   protected void setLearnerOptsOnScheme( Classifier scikitLearnClassifier, String learnerOpts )
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method m = scikitLearnClassifier.getClass().getDeclaredMethod( "setLearnerOpts", String.class );
@@ -237,6 +247,15 @@ public class PythonClassifierScheme extends SupervisedScheme {
    */
   @Override public boolean supportsIncrementalTraining() {
     return false; // no python methods can be trained incrementally
+  }
+
+  /**
+   * scikit-learn schemes do not support resumable iterative training
+   *
+   * @return false
+   */
+  @Override public boolean supportsResumableTraining() {
+    return false;
   }
 
   /**
@@ -479,5 +498,29 @@ public class PythonClassifierScheme extends SupervisedScheme {
     } catch ( Exception ex ) {
       throw new WekaException( ex );
     }
+  }
+
+  public void setConfiguredScheme( Object scheme ) throws Exception {
+    if ( scheme instanceof FilteredClassifier ) {
+      scheme = ( (FilteredClassifier) scheme ).getClassifier();
+    }
+    String schemeClass = scheme.getClass().getCanonicalName();
+    if ( !schemeClass.equals( "weka.classifiers.sklearn.ScikitLearnClassifier" ) ) {
+      throw new Exception( "Supplied configured scheme is not of the correct type" );
+    }
+
+    int enumOrdinal = getEnumConstVal( m_pythonLearner );
+    int configOrdinal = getLearnerFromScheme( (Classifier) scheme );
+
+    if ( enumOrdinal != configOrdinal ) {
+      throw new Exception(
+          "Configured scheme type '" + m_learnerEnumValues[configOrdinal] + "' is not equal to " + m_pythonLearner );
+    }
+
+    // Just copy over option settings from the supplied scheme, so that we avoid consuming
+    // memory for large trained models (model gets loaded again when transformation is executed)
+    ((OptionHandler) m_scheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    // m_scheme = (Classifier) scheme;
+    m_pythonLearner = m_learnerEnumValues[configOrdinal].toString();
   }
 }

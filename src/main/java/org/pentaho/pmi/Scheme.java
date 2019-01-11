@@ -150,6 +150,14 @@ public abstract class Scheme {
   public abstract boolean supportsIncrementalTraining();
 
   /**
+   * Subclass should return true if the scheme is an iterative batch learner that can resume training
+   * at some point in the future (potentially after serialization/deserialization of the model)
+   *
+   * @return true if the underlying learning scheme is resumable
+   */
+  public abstract boolean supportsResumableTraining();
+
+  /**
    * Subclass should return true if the scheme can handle string attributes directly
    *
    * @return true if the configured scheme can handle string attributes directly
@@ -205,6 +213,16 @@ public abstract class Scheme {
    */
   // TODO add log channel to report messages to
   public abstract Object getConfiguredScheme( Instances trainingHeader ) throws Exception;
+
+  /**
+   * Initialize this Scheme with the underlying predictive scheme. Implementations should just copy the option settings
+   * of the supplied underlying scheme in order to avoid consuming memory by storing a reference to a (potentially) large
+   * trained model object. The actual trained model will be loaded at transformation execution time and training resumed.
+   *
+   * @param scheme the underlying scheme to initialize with
+   * @throws Exception if the supplied underlying scheme does not match this Scheme
+   */
+  public abstract void setConfiguredScheme( Object scheme ) throws Exception;
 
   /**
    * Get the name of this scheme.
