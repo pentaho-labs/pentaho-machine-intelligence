@@ -25,6 +25,7 @@ package org.pentaho.pmi.engines;
 import org.pentaho.pmi.SchemeUtils;
 import org.pentaho.pmi.SupervisedScheme;
 import weka.classifiers.Classifier;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.meta.MultiClassClassifier;
 import weka.core.Instances;
 import weka.core.OptionHandler;
@@ -139,6 +140,15 @@ public class MLlibClassifierScheme extends SupervisedScheme {
   }
 
   /**
+   * MLlib schemes do not support resumable iterative training
+   *
+   * @return false
+   */
+  @Override public boolean supportsResumableTraining() {
+    return false;
+  }
+
+  /**
    * Returns true if the configured scheme can directly handle string attributes
    *
    * @return true if the configured scheme can directly handle string attributes
@@ -221,5 +231,22 @@ public class MLlibClassifierScheme extends SupervisedScheme {
     }
 
     return finalScheme;
+  }
+
+  public void setConfiguredScheme( Object scheme ) throws Exception {
+    if ( scheme instanceof FilteredClassifier ) {
+      scheme = ( (FilteredClassifier) scheme ).getClassifier();
+    }
+
+    if ( !scheme.getClass().getCanonicalName().equals( m_underlyingScheme.getClass().getCanonicalName() ) ) {
+      throw new Exception(
+          "Supplied configured scheme " + scheme.getClass().getCanonicalName() + " does not " + "match "
+              + m_underlyingScheme.getClass().getCanonicalName() );
+    }
+
+    // Just copy over option settings from the supplied scheme, so that we avoid consuming
+    // memory for large trained models (model gets loaded again when transformation is executed)
+    ((OptionHandler) m_underlyingScheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    // m_underlyingScheme = (Classifier) scheme;
   }
 }

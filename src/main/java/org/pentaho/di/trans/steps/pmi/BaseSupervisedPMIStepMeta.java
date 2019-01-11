@@ -95,6 +95,7 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
   protected static final String RANDOM_SEED_TAG = "random_seed";
   protected static final String MODEL_OUTPUT_DIRECTORY_TAG = "model_output_path";
   protected static final String MODEL_FILE_NAME_TAG = "model_file_name";
+  protected static final String RESUMABLE_MODEL_LOAD_PATH_TAG = "resumable_model_load_path";
   protected static final String OUTPUT_AUC_METRICS_TAG = "output_auc_metrics";
   protected static final String OUTPUT_IR_METRICS_TAG = "output_ir_metrics";
   protected static final String INCREMENTAL_TRAININ_INITIAL_ROW_CACHE_SIZE_TAG = "incremental_initial_cache";
@@ -225,6 +226,12 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
    * (i.e. there are string fields that will be converted to nominal attributes and the user has not specified the legal values apriori).
    */
   protected String m_incrementalInitialCache = "100";
+
+  /**
+   * If a scheme is resumable (implements IterativeClassifier), then this field can be used to specify a model to load
+   * for continued training (eval modes NONE or SEPARATE_TEST only).
+   */
+  protected String m_resumableModelLoadPath = "";
 
   // --------- row handling --------------
 
@@ -556,6 +563,24 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
     return m_modelFileName;
   }
 
+  /**
+   * Set a path to a searialize resumable model to load (and continue training)
+   *
+   * @param resumableModelPath the path to the resumable model
+   */
+  public void setResumableModelPath( String resumableModelPath ) {
+    m_resumableModelLoadPath = resumableModelPath;
+  }
+
+  /**
+   * Get the path to a searialize resumable model to load (and continue training)
+   *
+   * @return the path to the resumable model
+   */
+  public String getResumableModelPath() {
+    return m_resumableModelLoadPath;
+  }
+
   // ------------- evaluation opts -------------------
 
   /**
@@ -715,6 +740,7 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
     rep.saveStepAttribute( id_transformation, id_step, RANDOM_SEED_TAG, getRandomSeed() );
     rep.saveStepAttribute( id_transformation, id_step, MODEL_OUTPUT_DIRECTORY_TAG, getModelOutputPath() );
     rep.saveStepAttribute( id_transformation, id_step, MODEL_FILE_NAME_TAG, getModelFileName() );
+    rep.saveStepAttribute( id_transformation, id_step, RESUMABLE_MODEL_LOAD_PATH_TAG, getResumableModelPath() );
     rep.saveStepAttribute( id_transformation, id_step, OUTPUT_AUC_METRICS_TAG, getOutputAUCMetrics() );
     rep.saveStepAttribute( id_transformation, id_step, OUTPUT_IR_METRICS_TAG, getOutputIRMetrics() );
     rep.saveStepAttribute( id_transformation, id_step, INCREMENTAL_TRAININ_INITIAL_ROW_CACHE_SIZE_TAG,
@@ -758,6 +784,7 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
     buff.append( XMLHandler.addTagValue( RANDOM_SEED_TAG, getRandomSeed() ) );
     buff.append( XMLHandler.addTagValue( MODEL_OUTPUT_DIRECTORY_TAG, getModelOutputPath() ) );
     buff.append( XMLHandler.addTagValue( MODEL_FILE_NAME_TAG, getModelFileName() ) );
+    buff.append( XMLHandler.addTagValue( RESUMABLE_MODEL_LOAD_PATH_TAG, getResumableModelPath() ) );
     buff.append( XMLHandler.addTagValue( OUTPUT_AUC_METRICS_TAG, getOutputAUCMetrics() ) );
     buff.append( XMLHandler.addTagValue( OUTPUT_IR_METRICS_TAG, getOutputIRMetrics() ) );
     buff.append( XMLHandler.addTagValue( INCREMENTAL_TRAININ_INITIAL_ROW_CACHE_SIZE_TAG,
@@ -837,6 +864,8 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
     setModelOutputPath( modelOutputPath == null ? "" : modelOutputPath );
     String modelFileName = rep.getStepAttributeString( id_step, MODEL_FILE_NAME_TAG );
     setModelFileName( modelFileName == null ? "" : modelFileName );
+    String resumeModelLoadPath = rep.getStepAttributeString( id_step, RESUMABLE_MODEL_LOAD_PATH_TAG );
+    setResumableModelPath( resumeModelLoadPath == null ? "" : resumeModelLoadPath );
     setOutputAUCMetrics( rep.getStepAttributeBoolean( id_step, OUTPUT_AUC_METRICS_TAG ) );
     setOutputIRMetrics( rep.getStepAttributeBoolean( id_step, OUTPUT_IR_METRICS_TAG ) );
     setInitialRowCacheForNominalValDetermination(
@@ -923,6 +952,8 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
     setModelOutputPath( modelOutputPath == null ? "" : modelOutputPath );
     String modelFileName = XMLHandler.getTagValue( stepnode, MODEL_FILE_NAME_TAG );
     setModelFileName( modelFileName == null ? "" : modelFileName );
+    String resumeModelLoadPath = XMLHandler.getTagValue( stepnode, RESUMABLE_MODEL_LOAD_PATH_TAG );
+    setResumableModelPath( resumeModelLoadPath == null ? "" : resumeModelLoadPath );
     setOutputAUCMetrics( XMLHandler.getTagValue( stepnode, OUTPUT_AUC_METRICS_TAG ).equalsIgnoreCase( "Y" ) );
     setOutputIRMetrics( XMLHandler.getTagValue( stepnode, OUTPUT_IR_METRICS_TAG ).equalsIgnoreCase( "Y" ) );
     String incrementalCache = XMLHandler.getTagValue( stepnode, INCREMENTAL_TRAININ_INITIAL_ROW_CACHE_SIZE_TAG );
@@ -1011,7 +1042,7 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
   }
 
   public void clearStepIOMeta() {
-    ioMeta = null;
+    super.resetStepIoMeta();
   }
 
   @Override public void resetStepIoMeta() {
@@ -1019,7 +1050,9 @@ public abstract class BaseSupervisedPMIStepMeta extends BaseStepMeta implements 
   }
 
   @Override public void searchInfoAndTargetSteps( List<StepMeta> steps ) {
-    for ( StreamInterface stream : getStepIOMeta().getInfoStreams() ) {
+    List<StreamInterface> targetStreams = getStepIOMeta().getTargetStreams();
+
+    for ( StreamInterface stream : targetStreams ) {
       stream.setStepMeta( StepMeta.findStep( steps, (String) stream.getSubject() ) );
     }
   }

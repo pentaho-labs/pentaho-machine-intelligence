@@ -43,6 +43,7 @@ import org.pentaho.pmi.Evaluator;
 import org.pentaho.pmi.PMIEngine;
 import org.pentaho.pmi.Scheme;
 import weka.classifiers.Classifier;
+import weka.classifiers.IterativeClassifier;
 import weka.classifiers.UpdateableClassifier;
 import weka.classifiers.evaluation.Evaluation;
 import weka.core.Attribute;
@@ -56,6 +57,7 @@ import weka.core.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -610,7 +612,17 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
         // build final model on all the data (but only if it is going to be saved somewhere or separate test set eval or there is no eval being done)
         if ( !Const.isEmpty( m_modelOutputPath ) || stepMeta.getEvalMode() == Evaluator.EvalMode.SEPARATE_TEST_SET
             || stepMeta.getEvalMode() == Evaluator.EvalMode.NONE ) {
-          Classifier trainedFullModel = evaluator.buildFinalModel( log );
+
+          Classifier trainedFullModel = null;
+          if ( !Const.isEmpty( stepMeta.getResumableModelPath() ) && m_scheme.supportsResumableTraining() ) {
+            // TODO load model and perform training iterations with trainingData
+            List<Object> loaded = loadModel( vars.environmentSubstitute( stepMeta.getResumableModelPath() ), log );
+            trainedFullModel = (Classifier) loaded.get( 0 );
+            continueIteratingResumable( trainedFullModel, trainingData, stepMeta );
+            evaluator.setTrainedClassifier( trainedFullModel );
+          } else {
+            trainedFullModel = evaluator.buildFinalModel( log );
+          }
           m_finalModels.put( evalKey, trainedFullModel );
 
           // save model to file
@@ -632,6 +644,19 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
       }
     }
     return outputRow;
+  }
+
+  protected void continueIteratingResumable( Classifier classifier, Instances trainingData,
+      BaseSupervisedPMIStepMeta stepMeta ) throws Exception {
+    if ( classifier instanceof OptionHandler ) {
+      String opts = stepMeta.getSchemeCommandLineOptions();
+      ( (OptionHandler) classifier ).setOptions( Utils.splitOptions( opts ) );
+    }
+
+    ( (IterativeClassifier) classifier ).initializeClassifier( trainingData );
+    while ( ( (IterativeClassifier) classifier ).next() ) {
+    }
+    ( (IterativeClassifier) classifier ).done();
   }
 
   protected List<Object[]> handleSeparateTestRow( Object[] row, BaseSupervisedPMIStepMeta stepMeta,
@@ -845,6 +870,34 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     } catch ( Exception e ) {
       throw new KettleException( e );
     }
+  }
+
+  public static List<Object> loadModel( String modelPath, LogChannelInterface log ) throws KettleException {
+    if ( modelPath.toLowerCase().startsWith( "file:" ) ) {
+      try {
+        modelPath = modelPath.replace( " ", "%20" );
+        File updatedPath = new File( new java.net.URI( modelPath ) );
+        modelPath = updatedPath.toString();
+      } catch ( Exception ex ) {
+        throw new KettleException(
+            BaseMessages.getString( PKG, "BasePMIStep.Error.MalformedURIForModelPath", modelPath ) );
+      }
+    }
+
+    log.logBasic( BaseMessages.getString( PKG, "BasePMIStep.Info.LoadingResumableModel", modelPath ) );
+    Object[] loaded = null;
+    try {
+      loaded = SerializationHelper.readAll( modelPath );
+    } catch ( Exception e ) {
+      throw new KettleException( e );
+    }
+
+    if ( !( loaded[0] instanceof IterativeClassifier ) ) {
+      throw new KettleException( BaseMessages
+          .getString( PKG, "BasePMIStep.Error.LoadedModelIsNotResumable", loaded[0].getClass().getCanonicalName() ) );
+    }
+
+    return Arrays.asList( loaded );
   }
 
   protected Instances buildDataset( Instances header, RowMetaInterface inputRowMeta, List<Object[]> data,

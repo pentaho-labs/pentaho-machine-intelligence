@@ -124,6 +124,15 @@ public class DL4jClassifierScheme extends SupervisedScheme {
     return false;
   }
 
+  /**
+   * WekaDl4jMlpClassifier is an IterativeClassifier and therefore supports resumable training
+   *
+   * @return true
+   */
+  @Override public boolean supportsResumableTraining() {
+    return true;
+  }
+
   @Override public boolean canHandleStringAttributes() {
     // TODO really need to make a reflective call to see if the instance iterator is an
     // ImageInstanceIterator or a text-related iterator. This is the only time that string attributes
@@ -166,5 +175,15 @@ public class DL4jClassifierScheme extends SupervisedScheme {
     }
 
     return adjustForSamplingAndPreprocessing( trainingHeader, m_underlyingScheme );
+  }
+
+  public void setConfiguredScheme( Object scheme ) throws Exception {
+    if ( !scheme.getClass().getCanonicalName().equals( "weka.classifiers.functions.Dl4jMlpClassifier" ) ) {
+      throw new Exception( "Supplied configured scheme is not a Dl4jMlpClassifier" );
+    }
+    // Just copy over option settings from the supplied scheme, so that we avoid consuming
+    // memory for large trained models (model gets loaded again when transformation is executed)
+    ((OptionHandler) m_underlyingScheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    // m_underlyingScheme = (Classifier) scheme;
   }
 }

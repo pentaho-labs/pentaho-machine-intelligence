@@ -109,8 +109,7 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
 
         m_data.m_scheme = m_data.m_engine.getScheme( environmentSubstitute( m_meta.getSchemeName() ) );
         if ( !Const.isEmpty( m_meta.getSchemeCommandLineOptions() ) ) {
-          m_data.m_scheme
-              .setSchemeOptions( Utils.splitOptions( m_meta.getSchemeCommandLineOptions() )  );
+          m_data.m_scheme.setSchemeOptions( Utils.splitOptions( m_meta.getSchemeCommandLineOptions() ) );
         }
         m_data.m_scheme.setSamplingConfigs( m_meta.getSamplingConfigs() );
         m_data.m_scheme.setPreprocessingConfigs( m_meta.getPreprocessingConfigs() );
@@ -428,6 +427,14 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
 
         // incremental scheme?
         m_data.checkForIncrementalTraining( m_meta, getLogChannel() );
+
+        // Load resumable?
+        if ( m_data.m_scheme.supportsResumableTraining() && !Const.isEmpty( m_meta.getResumableModelPath() ) && (
+            m_meta.getEvalMode() == Evaluator.EvalMode.NONE
+                || m_meta.getEvalMode() == Evaluator.EvalMode.SEPARATE_TEST_SET ) ) {
+          String modelPath = environmentSubstitute( m_meta.getResumableModelPath() );
+          // TODO
+        }
       } catch ( Exception ex ) {
         logError( ex.getMessage(), ex );
         return false;

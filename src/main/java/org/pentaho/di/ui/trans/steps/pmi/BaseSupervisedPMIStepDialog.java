@@ -40,6 +40,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
@@ -194,6 +195,13 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
    * Field for specifying the filename when saving the model
    */
   protected TextVar m_modelFilenameField;
+
+  /**
+   * For loading IterativeClassifiers for continued training
+   */
+  protected TextVar m_modelLoadField;
+  protected Label m_modelLoadLab;
+  protected Button m_browseLoadModelButton;
 
   /**
    * Field that appears only for incremental learning schemes - allows the initial n rows to be cached and used
@@ -417,6 +425,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     } );
 
     checkWidgets();
+    getDataResumable( m_inputMeta );
     setSize();
 
     shell.open();
@@ -533,6 +542,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     if ( m_incrementalRowCacheField != null ) {
       meta.setInitialRowCacheForNominalValDetermination( m_incrementalRowCacheField.getText() );
     }
+
+    if ( m_modelLoadField != null ) {
+      meta.setResumableModelPath( m_modelLoadField.getText() );
+    } else {
+      meta.setResumableModelPath( "" );
+    }
   }
 
   /**
@@ -552,6 +567,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
       return ArffMeta.STRING;
     }
     return ArffMeta.DATE;
+  }
+
+  protected void getDataResumable( BaseSupervisedPMIStepMeta meta ) {
+    if ( m_modelLoadField != null ) {
+      m_modelLoadField.setText( meta.getResumableModelPath() );
+    }
   }
 
   protected boolean getData( BaseSupervisedPMIStepMeta meta ) {
@@ -1166,45 +1187,33 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
   }
 
   @SuppressWarnings( "unchecked" )
-  protected void populateSchemeTab( boolean engineChange, BaseSupervisedPMIStepMeta stepMeta ) {
+  protected void buildPropertySheet() {
+
     for ( Control k : m_schemeGroup.getChildren() ) {
       k.dispose();
     }
     m_schemeWidgets.clear();
     m_schemeObjectValueLabelTextReps.clear();
 
-    String currentEngine = m_engineDropDown.getText();
-    if ( !Const.isEmpty( currentEngine ) ) {
-      try {
-        PMIEngine eng = PMIEngine.getEngine( currentEngine );
-        Scheme scheme = eng.getScheme( m_originalMeta.getSchemeName() );
+    lastControl = null;
+    String helpInfo = (String) m_topLevelSchemeInfo.get( "helpSummary" );
+    String helpSynopsis = (String) m_topLevelSchemeInfo.get( "helpSynopsis" );
+    if ( !Const.isEmpty( helpInfo ) ) {
+      Group helpGroup = new Group( m_schemeGroup, SWT.SHADOW_NONE );
+      props.setLook( helpGroup );
+      helpGroup.setText( "About" );
+      FormLayout fl = new FormLayout();
+      fl.marginWidth = 10;
+      fl.marginHeight = 10;
+      helpGroup.setLayout( fl );
+      FormData fd = new FormData();
+      fd.left = new FormAttachment( 0, 0 );
+      fd.right = new FormAttachment( 100, 0 );
+      fd.top = new FormAttachment( 0, 0 );
+      helpGroup.setLayoutData( fd );
 
-        // Only configure with the current meta scheme options if the engine has not changed
-        if ( !engineChange && !Const.isEmpty( stepMeta.getSchemeCommandLineOptions() ) ) {
-          scheme.setSchemeOptions( Utils.splitOptions( stepMeta.getSchemeCommandLineOptions() ) );
-        }
-        m_topLevelSchemeInfo = scheme.getSchemeInfo();
-        m_scheme = scheme;
-
-        lastControl = null;
-        String helpInfo = (String) m_topLevelSchemeInfo.get( "helpSummary" );
-        String helpSynopsis = (String) m_topLevelSchemeInfo.get( "helpSynopsis" );
-        if ( !Const.isEmpty( helpInfo ) ) {
-          Group helpGroup = new Group( m_schemeGroup, SWT.SHADOW_NONE );
-          props.setLook( helpGroup );
-          helpGroup.setText( "About" );
-          FormLayout fl = new FormLayout();
-          fl.marginWidth = 10;
-          fl.marginHeight = 10;
-          helpGroup.setLayout( fl );
-          FormData fd = new FormData();
-          fd.left = new FormAttachment( 0, 0 );
-          fd.right = new FormAttachment( 100, 0 );
-          fd.top = new FormAttachment( 0, 0 );
-          helpGroup.setLayoutData( fd );
-
-          // TODO do this properly at some stage...
-          Button moreButton = null;
+      // TODO do this properly at some stage...
+      Button moreButton = null;
           /* if ( !Const.isEmpty( helpSynopsis ) ) {
             moreButton = new Button( helpGroup, SWT.PUSH );
             props.setLook( moreButton );
@@ -1221,199 +1230,197 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
             } );
           } */
 
-          Label aboutLab = new Label( helpGroup, SWT.LEFT );
-          props.setLook( aboutLab );
-          aboutLab.setText( helpInfo );
-          fd = new FormData();
-          fd.top = new FormAttachment( 0, 4 );
-          fd.left = new FormAttachment( 0, 0 );
-          fd.right = moreButton != null ? new FormAttachment( moreButton, -4 ) : new FormAttachment( 100, -4 );
-          aboutLab.setLayoutData( fd );
-          lastControl = helpGroup;
-        }
+      Label aboutLab = new Label( helpGroup, SWT.LEFT );
+      props.setLook( aboutLab );
+      aboutLab.setText( helpInfo );
+      fd = new FormData();
+      fd.top = new FormAttachment( 0, 4 );
+      fd.left = new FormAttachment( 0, 0 );
+      fd.right = moreButton != null ? new FormAttachment( moreButton, -4 ) : new FormAttachment( 100, -4 );
+      aboutLab.setLayoutData( fd );
+      lastControl = helpGroup;
+    }
 
-        m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
-        // lastControl = null;
-        for ( Map.Entry<String, Map<String, Object>> e : m_properties.entrySet() ) {
-          final String propName = e.getKey();
-          final Map<String, Object> propDetails = e.getValue();
-          String tipText = (String) propDetails.get( "tip-text" );
-          String type = (String) propDetails.get( "type" );
-          String propLabelText = (String) propDetails.get( "label" );
-          final Object value = propDetails.get( "value" );
+    m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
 
-          Label propLabel = new Label( m_schemeGroup, SWT.RIGHT );
-          props.setLook( propLabel );
-          propLabel.setText( propLabelText );
-          if ( !Const.isEmpty( tipText ) ) {
-            propLabel.setToolTipText( tipText );
-          }
-          propLabel.setLayoutData( getFirstLabelFormData() );
+    for ( Map.Entry<String, Map<String, Object>> e : m_properties.entrySet() ) {
+      final String propName = e.getKey();
+      final Map<String, Object> propDetails = e.getValue();
+      String tipText = (String) propDetails.get( "tip-text" );
+      String type = (String) propDetails.get( "type" );
+      String propLabelText = (String) propDetails.get( "label" );
+      final Object value = propDetails.get( "value" );
 
-          // everything apart from object, array and pick-list is handled by a text field
-          if ( type.equalsIgnoreCase( "object" ) ) {
-            String objectTextRep = value.toString();
-            Object objectValue = propDetails.get( "objectValue" );
-            final String goeBaseType = propDetails.get( "goeBaseType" ).toString();
-            final Label objectValueLab = new Label( m_schemeGroup, SWT.RIGHT );
-            props.setLook( objectValueLab );
-            objectValueLab.setText( objectTextRep );
-            objectValueLab.setLayoutData( getFirstPromptFormData( propLabel ) );
-            m_schemeObjectValueLabelTextReps.put( propName, objectValueLab );
+      Label propLabel = new Label( m_schemeGroup, SWT.RIGHT );
+      props.setLook( propLabel );
+      propLabel.setText( propLabelText );
+      if ( !Const.isEmpty( tipText ) ) {
+        propLabel.setToolTipText( tipText );
+      }
+      propLabel.setLayoutData( getFirstLabelFormData() );
 
-            final Button objectValEditBut = new Button( m_schemeGroup, SWT.PUSH );
-            props.setLook( objectValEditBut );
-            objectValEditBut.setText( "Edit..." /*+ objectTextRep */ );
-            // objectValEditBut.setLayoutData( getSecondPromptFormData( objectValueLab ) );
-            objectValEditBut.setLayoutData( getFirstGOEFormData( objectValueLab ) );
+      // everything apart from object, array and pick-list is handled by a text field
+      if ( type.equalsIgnoreCase( "object" ) ) {
+        String objectTextRep = value.toString();
+        Object objectValue = propDetails.get( "objectValue" );
+        final String goeBaseType = propDetails.get( "goeBaseType" ).toString();
+        final Label objectValueLab = new Label( m_schemeGroup, SWT.RIGHT );
+        props.setLook( objectValueLab );
+        objectValueLab.setText( objectTextRep );
+        objectValueLab.setLayoutData( getFirstPromptFormData( propLabel ) );
+        m_schemeObjectValueLabelTextReps.put( propName, objectValueLab );
 
-            final Button objectChooseBut = new Button( m_schemeGroup, SWT.PUSH );
-            props.setLook( objectChooseBut );
-            objectChooseBut.setText( "Choose..." );
-            // objectChooseBut.setLayoutData( getThirdPropmtFormData( objectValEditBut ) );
-            objectChooseBut.setLayoutData( getSecondGOEFormData( objectValEditBut ) );
-            objectChooseBut.addSelectionListener( new SelectionAdapter() {
-              @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-                super.widgetSelected( selectionEvent );
-                Object selectedObject = null;
-                try {
-                  objectChooseBut.setEnabled( false );
-                  objectValEditBut.setEnabled( false );
-                  GOETree treeDialog = new GOETree( shell, SWT.OK | SWT.CANCEL, goeBaseType );
-                  int result = treeDialog.open();
-                  if ( result == SWT.OK ) {
-                    Object selectedTreeValue = treeDialog.getSelectedTreeObject();
-                    if ( selectedTreeValue != null ) {
-                      Map<String, Object> propDetails = m_properties.get( propName );
-                      if ( propDetails != null ) {
-                        propDetails.put( "objectValue", selectedTreeValue );
-                      }
+        final Button objectValEditBut = new Button( m_schemeGroup, SWT.PUSH );
+        props.setLook( objectValEditBut );
+        objectValEditBut.setText( "Edit..." /*+ objectTextRep */ );
+        // objectValEditBut.setLayoutData( getSecondPromptFormData( objectValueLab ) );
+        objectValEditBut.setLayoutData( getFirstGOEFormData( objectValueLab ) );
 
-                      // This is solely in case there is a dependency between options, i.e. where changing the value of
-                      // one option causes another one to change.
-                      m_scheme.setSchemeParameters( m_properties );
-                      m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
-                      m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
-                      refreshSchemeLabels();
-                    }
-                    objectValueLab.setText( SchemeUtils.getTextRepresentationOfObjectValue( selectedTreeValue ) );
-                  }
-                } catch ( Exception ex ) {
-                  // TODO popup error dialog
-                  ex.printStackTrace();
-                } finally {
-                  objectChooseBut.setEnabled( true );
-                  objectValEditBut.setEnabled( true );
-                }
-              }
-            } );
-
-            objectValEditBut.addSelectionListener( new SelectionAdapter() {
-              @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-                super.widgetSelected( selectionEvent );
-                objectValEditBut.setEnabled( false );
-                objectChooseBut.setEnabled( false );
-                try {
-                  // re-get the prop details here in case changing another object-based option has resulted in
-                  // a change to this one due to a dependency
+        final Button objectChooseBut = new Button( m_schemeGroup, SWT.PUSH );
+        props.setLook( objectChooseBut );
+        objectChooseBut.setText( "Choose..." );
+        // objectChooseBut.setLayoutData( getThirdPropmtFormData( objectValEditBut ) );
+        objectChooseBut.setLayoutData( getSecondGOEFormData( objectValEditBut ) );
+        objectChooseBut.addSelectionListener( new SelectionAdapter() {
+          @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+            super.widgetSelected( selectionEvent );
+            Object selectedObject = null;
+            try {
+              objectChooseBut.setEnabled( false );
+              objectValEditBut.setEnabled( false );
+              GOETree treeDialog = new GOETree( shell, SWT.OK | SWT.CANCEL, goeBaseType );
+              int result = treeDialog.open();
+              if ( result == SWT.OK ) {
+                Object selectedTreeValue = treeDialog.getSelectedTreeObject();
+                if ( selectedTreeValue != null ) {
                   Map<String, Object> propDetails = m_properties.get( propName );
-                  GOEDialog
-                      dialog =
-                      new GOEDialog( shell, SWT.OK | SWT.CANCEL, propDetails.get( "objectValue" ), transMeta );
-                  dialog.open();
-
-                  objectValueLab
-                      .setText( SchemeUtils.getTextRepresentationOfObjectValue( propDetails.get( "objectValue" ) ) );
+                  if ( propDetails != null ) {
+                    propDetails.put( "objectValue", selectedTreeValue );
+                  }
 
                   // This is solely in case there is a dependency between options, i.e. where changing the value of
                   // one option causes another one to change.
-                  //m_scheme.setSchemeParameters( m_properties );
-                  // m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
-                  // refreshSchemeLabels();
-                } catch ( Exception e1 ) {
-                  e1.printStackTrace();
-                } finally {
-                  objectValEditBut.setEnabled( true );
-                  objectChooseBut.setEnabled( true );
+                  m_scheme.setSchemeParameters( m_properties );
+                  m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
+                  m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
+                  refreshSchemeLabels();
                 }
+                objectValueLab.setText( SchemeUtils.getTextRepresentationOfObjectValue( selectedTreeValue ) );
               }
-            } );
-
-            lastControl = objectValEditBut;
-          } else if ( type.equalsIgnoreCase( "array" ) ) {
-            String arrayType = (String) propDetails.get( "array-type" );
-            Object objectValue = propDetails.get( "objectValue" );
-            if ( arrayType != null && arrayType.length() > 0 && arrayType.equalsIgnoreCase( "object" ) ) {
-              // just handle objects for now...
-              // value holds element type class : num elements in array
-              // objectValue holds the array itself
-
-              final Label arrayElementType = new Label( m_schemeGroup, SWT.RIGHT );
-              props.setLook( arrayElementType );
-              arrayElementType.setText( value.toString() + " : " + Array.getLength( objectValue ) );
-              arrayElementType.setLayoutData( getFirstPromptFormData( propLabel ) );
-              m_schemeObjectValueLabelTextReps.put( propName, arrayElementType );
-
-              final Button arrayValEditBut = new Button( m_schemeGroup, SWT.PUSH );
-              props.setLook( arrayValEditBut );
-              arrayValEditBut.setText( "Edit..." );
-              arrayValEditBut.setLayoutData( getFirstGOEFormData( arrayElementType ) );
-
-              lastControl = arrayValEditBut;
-
-              arrayValEditBut.addSelectionListener( new SelectionAdapter() {
-                @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-                  super.widgetSelected( selectionEvent );
-                  // re-get the prop details here in case changing another object-based option has resulted in
-                  // a change to this one due to a dependency
-                  Map<String, Object> propDetails = m_properties.get( propName );
-                  arrayValEditBut.setEnabled( false );
-                  Object arrValue = propDetails.get( "objectValue" );
-                  try {
-                    GAEDialog
-                        dialog =
-                        new GAEDialog( shell, SWT.OK | SWT.CANCEL, arrValue, (Class<?>) value, transMeta );
-                    dialog.open();
-                    Object newArrValue = dialog.getArray();
-                    propDetails.put( "objectValue", newArrValue );
-                    arrayElementType.setText( value.toString() + " : " + Array.getLength( newArrValue ) );
-                  } catch ( Exception ex ) {
-                    ex.printStackTrace();
-                  } finally {
-                    arrayValEditBut.setEnabled( true );
-                  }
-                }
-              } );
+            } catch ( Exception ex ) {
+              // TODO popup error dialog
+              ex.printStackTrace();
+            } finally {
+              objectChooseBut.setEnabled( true );
+              objectValEditBut.setEnabled( true );
             }
-          } else if ( type.equalsIgnoreCase( "pick-list" ) ) {
-            String pickListValues = (String) propDetails.get( "pick-list-values" );
-            String[] vals = pickListValues.split( "," );
-            ComboVar pickListCombo = new ComboVar( transMeta, m_schemeGroup, SWT.BORDER | SWT.READ_ONLY );
-            props.setLook( pickListCombo );
-            for ( String v : vals ) {
-              pickListCombo.add( v.trim() );
+          }
+        } );
+
+        objectValEditBut.addSelectionListener( new SelectionAdapter() {
+          @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+            super.widgetSelected( selectionEvent );
+            objectValEditBut.setEnabled( false );
+            objectChooseBut.setEnabled( false );
+            try {
+              // re-get the prop details here in case changing another object-based option has resulted in
+              // a change to this one due to a dependency
+              Map<String, Object> propDetails = m_properties.get( propName );
+              GOEDialog
+                  dialog =
+                  new GOEDialog( shell, SWT.OK | SWT.CANCEL, propDetails.get( "objectValue" ), transMeta );
+              dialog.open();
+
+              objectValueLab
+                  .setText( SchemeUtils.getTextRepresentationOfObjectValue( propDetails.get( "objectValue" ) ) );
+
+              // This is solely in case there is a dependency between options, i.e. where changing the value of
+              // one option causes another one to change.
+              //m_scheme.setSchemeParameters( m_properties );
+              // m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
+              // refreshSchemeLabels();
+            } catch ( Exception e1 ) {
+              e1.printStackTrace();
+            } finally {
+              objectValEditBut.setEnabled( true );
+              objectChooseBut.setEnabled( true );
             }
-            if ( value != null && value.toString().length() > 0 ) {
-              pickListCombo.setText( value.toString() );
-            }
-            pickListCombo.addSelectionListener( new SelectionAdapter() {
-              @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-                super.widgetSelected( selectionEvent );
-                m_inputMeta.setChanged();
+          }
+        } );
+
+        lastControl = objectValEditBut;
+      } else if ( type.equalsIgnoreCase( "array" ) ) {
+        String arrayType = (String) propDetails.get( "array-type" );
+        Object objectValue = propDetails.get( "objectValue" );
+        if ( arrayType != null && arrayType.length() > 0 && arrayType.equalsIgnoreCase( "object" ) ) {
+          // just handle objects for now...
+          // value holds element type class : num elements in array
+          // objectValue holds the array itself
+
+          final Label arrayElementType = new Label( m_schemeGroup, SWT.RIGHT );
+          props.setLook( arrayElementType );
+          arrayElementType.setText( value.toString() + " : " + Array.getLength( objectValue ) );
+          arrayElementType.setLayoutData( getFirstPromptFormData( propLabel ) );
+          m_schemeObjectValueLabelTextReps.put( propName, arrayElementType );
+
+          final Button arrayValEditBut = new Button( m_schemeGroup, SWT.PUSH );
+          props.setLook( arrayValEditBut );
+          arrayValEditBut.setText( "Edit..." );
+          arrayValEditBut.setLayoutData( getFirstGOEFormData( arrayElementType ) );
+
+          lastControl = arrayValEditBut;
+
+          arrayValEditBut.addSelectionListener( new SelectionAdapter() {
+            @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+              super.widgetSelected( selectionEvent );
+              // re-get the prop details here in case changing another object-based option has resulted in
+              // a change to this one due to a dependency
+              Map<String, Object> propDetails = m_properties.get( propName );
+              arrayValEditBut.setEnabled( false );
+              Object arrValue = propDetails.get( "objectValue" );
+              try {
+                GAEDialog dialog = new GAEDialog( shell, SWT.OK | SWT.CANCEL, arrValue, (Class<?>) value, transMeta );
+                dialog.open();
+                Object newArrValue = dialog.getArray();
+                propDetails.put( "objectValue", newArrValue );
+                arrayElementType.setText( value.toString() + " : " + Array.getLength( newArrValue ) );
+              } catch ( Exception ex ) {
+                ex.printStackTrace();
+              } finally {
+                arrayValEditBut.setEnabled( true );
               }
-            } );
-            pickListCombo.setLayoutData( getFirstPromptFormData( propLabel ) );
-            lastControl = pickListCombo;
-            m_schemeWidgets.put( propName, pickListCombo );
-          } else if ( type.equalsIgnoreCase( "boolean" ) ) {
-            Button boolBut = new Button( m_schemeGroup, SWT.CHECK );
-            props.setLook( boolBut );
-            boolBut.setLayoutData( getFirstPromptFormData( propLabel ) );
-            if ( value != null && value.toString().length() > 0 ) {
-              boolBut.setSelection( Boolean.parseBoolean( value.toString() ) );
             }
-            lastControl = boolBut;
-            m_schemeWidgets.put( propName, boolBut );
+          } );
+        }
+      } else if ( type.equalsIgnoreCase( "pick-list" ) ) {
+        String pickListValues = (String) propDetails.get( "pick-list-values" );
+        String[] vals = pickListValues.split( "," );
+        ComboVar pickListCombo = new ComboVar( transMeta, m_schemeGroup, SWT.BORDER | SWT.READ_ONLY );
+        props.setLook( pickListCombo );
+        for ( String v : vals ) {
+          pickListCombo.add( v.trim() );
+        }
+        if ( value != null && value.toString().length() > 0 ) {
+          pickListCombo.setText( value.toString() );
+        }
+        pickListCombo.addSelectionListener( new SelectionAdapter() {
+          @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+            super.widgetSelected( selectionEvent );
+            m_inputMeta.setChanged();
+          }
+        } );
+        pickListCombo.setLayoutData( getFirstPromptFormData( propLabel ) );
+        lastControl = pickListCombo;
+        m_schemeWidgets.put( propName, pickListCombo );
+      } else if ( type.equalsIgnoreCase( "boolean" ) ) {
+        Button boolBut = new Button( m_schemeGroup, SWT.CHECK );
+        props.setLook( boolBut );
+        boolBut.setLayoutData( getFirstPromptFormData( propLabel ) );
+        if ( value != null && value.toString().length() > 0 ) {
+          boolBut.setSelection( Boolean.parseBoolean( value.toString() ) );
+        }
+        lastControl = boolBut;
+        m_schemeWidgets.put( propName, boolBut );
             /* ComboVar pickListCombo = new ComboVar( transMeta, m_schemeGroup, SWT.BORDER | SWT.READ_ONLY );
             props.setLook( pickListCombo );
             pickListCombo.add( "true" );
@@ -1425,19 +1432,62 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
             lastControl = pickListCombo;
             m_schemeWidgets.put( propName, pickListCombo );
 */
-          } else {
-            Text propVar = new Text( m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
-            props.setLook( propVar );
-            if ( value != null ) {
-              propVar.setText( value.toString() );
-            }
-            propVar.addModifyListener( m_simpleModifyListener );
-            propVar.setLayoutData( getFirstPromptFormData( propLabel ) );
-            lastControl = propVar;
-            m_schemeWidgets.put( propName, propVar );
-          }
+      } else {
+        Text propVar = new Text( m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        props.setLook( propVar );
+        if ( value != null ) {
+          propVar.setText( value.toString() );
         }
+        propVar.addModifyListener( m_simpleModifyListener );
+        propVar.setLayoutData( getFirstPromptFormData( propLabel ) );
+        lastControl = propVar;
+        m_schemeWidgets.put( propName, propVar );
+      }
+    }
 
+    m_schemeGroup.layout();
+    m_schemeComposite.layout();
+
+    if ( m_scheme.supportsIncrementalTraining() ) {
+      Label incrementalCacheLab = new Label( m_schemeComposite, SWT.RIGHT );
+      props.setLook( incrementalCacheLab );
+      incrementalCacheLab.setText( BaseMessages.getString( PKG, "BasePMIStepDialog.IncrementalRowCacheSize.Label" ) );
+      incrementalCacheLab
+          .setToolTipText( BaseMessages.getString( PKG, "BasePMIStepDialog.IncrementalRowCacheSize.TipText" ) );
+      FormData fd = getFirstLabelFormData();
+      fd.top = new FormAttachment( m_modelFilenameField, MARGIN );
+      incrementalCacheLab.setLayoutData( fd );
+
+      m_incrementalRowCacheField = new TextVar( transMeta, m_schemeComposite, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+      props.setLook( m_incrementalRowCacheField );
+      m_incrementalRowCacheField.addModifyListener( m_simpleModifyListener );
+      fd = getFirstPromptFormData( incrementalCacheLab );
+      fd.top = new FormAttachment( m_modelFilenameField, MARGIN );
+      m_incrementalRowCacheField.setLayoutData( fd );
+
+      m_incrementalRowCacheField.setText( m_inputMeta.getInitialRowCacheForNominalValDetermination() );
+    }
+  }
+
+  @SuppressWarnings( "unchecked" )
+  protected void populateSchemeTab( boolean engineChange, BaseSupervisedPMIStepMeta stepMeta ) {
+
+    String currentEngine = m_engineDropDown.getText();
+    if ( !Const.isEmpty( currentEngine ) ) {
+      try {
+        PMIEngine eng = PMIEngine.getEngine( currentEngine );
+        Scheme scheme = eng.getScheme( m_originalMeta.getSchemeName() );
+
+        // Only configure with the current meta scheme options if the engine has not changed
+        if ( !engineChange && !Const.isEmpty( stepMeta.getSchemeCommandLineOptions() ) ) {
+          scheme.setSchemeOptions( Utils.splitOptions( stepMeta.getSchemeCommandLineOptions() ) );
+        }
+        m_topLevelSchemeInfo = scheme.getSchemeInfo();
+        m_scheme = scheme;
+
+        buildPropertySheet();
+
+        // lastControl = null;
       } catch ( Exception e ) {
         e.printStackTrace();
         ShowMessageDialog
@@ -1882,6 +1932,80 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
         m_outputIRMetricsCheck.setSelection( false );
       }
       m_testStepDropDown.setEnabled( false );
+    }
+
+    // Check for IterableClassifier && evaluation mode
+    if ( m_scheme.supportsResumableTraining() && m_rowsToProcessDropDown.getText().equalsIgnoreCase( "ALL" ) && (
+        currentEvalSetting.equalsIgnoreCase( Evaluator.EvalMode.NONE.toString() ) || currentEvalSetting
+            .equalsIgnoreCase( Evaluator.EvalMode.SEPARATE_TEST_SET.toString() ) ) && m_modelLoadField == null ) {
+      m_modelLoadLab = new Label( m_schemeComposite, SWT.RIGHT );
+      m_modelLoadLab.setText( BaseMessages.getString( PKG, "BasePMIStepDialog.IterativeModelLoad.Label" ) );
+      props.setLook( m_modelLoadLab );
+      lastControl = m_modelFilenameField;
+      m_modelLoadLab.setLayoutData( getFirstLabelFormData() );
+
+      m_modelLoadField = new TextVar( transMeta, m_schemeComposite, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+      props.setLook( m_modelLoadField );
+      m_modelLoadField.setLayoutData( getFirstPromptFormData( m_modelLoadLab ) );
+
+      m_browseLoadModelButton = new Button( m_schemeComposite, SWT.PUSH );
+      props.setLook( m_browseLoadModelButton );
+      m_browseLoadModelButton
+          .setText( BaseMessages.getString( PKG, "BasePMIStepDialog.BrowseModelOutputDirectory.Button" ) );
+      m_browseLoadModelButton.setLayoutData( getSecondLabelFormData( m_modelLoadField ) );
+
+      m_browseLoadModelButton.addSelectionListener( new SelectionAdapter() {
+        @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+          super.widgetSelected( selectionEvent );
+          FileDialog dialog = new FileDialog( shell, SWT.OPEN );
+
+          String modelPath = dialog.open();
+          boolean ok = false;
+          File updatedModelPath = null;
+          if ( !Const.isEmpty( modelPath ) && modelPath.toLowerCase().startsWith( "file:" ) ) {
+            modelPath = modelPath.replace( " ", "%20" );
+
+            try {
+              updatedModelPath = new File( new java.net.URI( modelPath ) );
+              ok = true;
+            } catch ( URISyntaxException e ) {
+              e.printStackTrace();
+            }
+          } else {
+            updatedModelPath = new File( modelPath );
+            ok = true;
+          }
+          if ( ok && updatedModelPath.exists() && updatedModelPath.isFile() ) {
+            if ( log != null ) {
+              log.logBasic( "Loading/checking model: " + updatedModelPath.toString() );
+              try {
+                List<Object> loaded = BaseSupervisedPMIStepData.loadModel( updatedModelPath.toString(), log );
+                m_modelLoadField.setText( updatedModelPath.toString() );
+
+                // Apply loaded model options to dialog
+                m_scheme.setConfiguredScheme( loaded.get( 0 ) );
+                m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
+
+                buildPropertySheet();
+              } catch ( Exception e ) {
+                // TODO popup error dialog
+                e.printStackTrace();
+              }
+            }
+          }
+        }
+      } );
+
+      m_schemeGroup.layout();
+      m_schemeComposite.layout();
+    } else if ( m_modelLoadField != null ) {
+      m_modelLoadLab.dispose();
+      m_modelLoadField.dispose();
+      m_modelLoadLab = null;
+      m_modelLoadField = null;
+
+      m_schemeGroup.layout();
+      m_schemeComposite.layout();
     }
   }
 
