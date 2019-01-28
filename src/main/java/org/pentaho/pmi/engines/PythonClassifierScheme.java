@@ -140,6 +140,10 @@ public class PythonClassifierScheme extends SupervisedScheme {
       m_pythonLearner = "MLPClassifier";
     } else if ( schemeName.equalsIgnoreCase( "Multi-layer perceptron regressor" ) ) {
       m_pythonLearner = "MLPRegressor";
+    } else if ( schemeName.equalsIgnoreCase( "Extreme gradient boosting classifier" ) ) {
+      m_pythonLearner = "XGBClassifier";
+    } else if ( schemeName.equalsIgnoreCase( "Extreme gradient boosting regressor" ) ) {
+      m_pythonLearner = "XGBRegressor";
     } else {
       throw new UnsupportedSchemeException( "Classification/regression scheme '" + schemeName + "' is unsupported" );
     }
@@ -519,7 +523,7 @@ public class PythonClassifierScheme extends SupervisedScheme {
 
     // Just copy over option settings from the supplied scheme, so that we avoid consuming
     // memory for large trained models (model gets loaded again when transformation is executed)
-    ((OptionHandler) m_scheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    ( (OptionHandler) m_scheme ).setOptions( ( (OptionHandler) scheme ).getOptions() );
     // m_scheme = (Classifier) scheme;
     m_pythonLearner = m_learnerEnumValues[configOrdinal].toString();
   }
