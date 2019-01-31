@@ -86,7 +86,7 @@ public abstract class PMIEngine {
         s_availableEngines.put( PythonEngine.ENGINE_NAME, PythonEngine.ENGINE_CLASS );
         s_availableEngines.put( REngine.ENGINE_NAME, REngine.ENGINE_CLASS );
         s_availableEngines.put( MLlibEngine.ENGINE_NAME, MLlibEngine.ENGINE_CLASS );
-        s_availableEngines.put( DL4jEngine.ENGINE_NAME, DL4jEngine.ENGINE_CLASS);
+        s_availableEngines.put( DL4jEngine.ENGINE_NAME, DL4jEngine.ENGINE_CLASS );
       }
     }
   }
@@ -114,11 +114,20 @@ public abstract class PMIEngine {
    * @throws InstantiationException if the engine can't be instantiated
    */
   public static PMIEngine instantiateEngine( String engineClass )
-      throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+      throws ClassNotFoundException, IllegalAccessException, InstantiationException, UnsupportedEngineException {
     Object engine = Class.forName( engineClass ).newInstance();
 
     if ( !( engine instanceof PMIEngine ) ) {
       throw new InstantiationException( engineClass + " is not a subclass of PMIEngine!" );
+    }
+
+    List<String> messages = new ArrayList<>();
+    if ( !( (PMIEngine) engine ).engineAvailable( messages ) ) {
+      String exS = engineClass + " is not available:\n\n";
+      for ( String s : messages ) {
+        exS += s;
+      }
+      throw new UnsupportedEngineException( exS );
     }
 
     return (PMIEngine) engine;
@@ -129,7 +138,7 @@ public abstract class PMIEngine {
    *
    * @param name the name of the engine to get
    * @return the named engine
-   * @throws UnsupportedEngineException  if the named engine is not known/supported
+   * @throws UnsupportedEngineException if the named engine is not known/supported
    */
   public static PMIEngine getEngine( String name ) throws UnsupportedEngineException {
     String engineClass = s_availableEngines.get( name );
