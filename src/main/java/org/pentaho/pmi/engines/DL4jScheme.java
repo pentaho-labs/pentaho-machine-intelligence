@@ -20,7 +20,8 @@ public class DL4jScheme {
       s_excludedSchemes =
       Arrays.asList( "Naive Bayes", "Naive Bayes incremental", "Naive Bayes multinomial", "Decision tree classifier",
           "Decision tree regressor", "Random forest classifier", "Random forest regressor", "Gradient boosted trees",
-          "Support vector regressor", "Multi-layer perceptron classifier", "Multi-layer perceptron regressor");
+          "Support vector regressor", "Multi-layer perceptron classifier", "Multi-layer perceptron regressor",
+          "Extreme gradient boosting classifier", "Extreme gradient boosting regressor");
 
   public static Scheme getSupervisedDlL4jScheme( String schemeName ) throws Exception {
     if ( SupervisedScheme.s_defaultClassifierSchemeList.contains( schemeName ) && !s_excludedSchemes

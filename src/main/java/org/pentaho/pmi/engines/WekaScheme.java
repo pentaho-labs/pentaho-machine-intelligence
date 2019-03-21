@@ -37,7 +37,8 @@ import java.util.List;
  */
 public abstract class WekaScheme {
 
-  protected static List<String> s_excludedSchemes = Arrays.asList( "Deep learning network" );
+  protected static List<String> s_excludedSchemes = Arrays.asList( "Deep learning network",
+      "Extreme gradient boosting classifier", "Extreme gradient boosting regressor");
 
   /**
    * Static factory method for obtaining a {@code Scheme} instance that encapsulates a WEKA implementation of the
