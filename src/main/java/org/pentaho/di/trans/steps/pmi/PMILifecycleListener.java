@@ -95,13 +95,13 @@ public class PMILifecycleListener implements KettleLifecycleListener {
 
       weka.core.packageManagement.Package
           distributedWekaSparkDevPackage =
-          weka.core.WekaPackageManager.getInstalledPackageInfo( "distributedWekaSparkDev" );
+          weka.core.WekaPackageManager.getInstalledPackageInfo( "distributedWekaSpark2Dev" );
       if ( distributedWekaSparkDevPackage == null ) {
-        String latestCompatibleVersion = getLatestVersion( "distributedWekaSparkDev" );
+        String latestCompatibleVersion = getLatestVersion( "distributedWekaSpark2Dev" );
         System.out.println( "[PMI] distributed Weka Spark package is not installed - attempting to install version "
             + latestCompatibleVersion );
         WekaPackageManager
-            .installPackageFromRepository( "distributedWekaSparkDev", latestCompatibleVersion, System.out );
+            .installPackageFromRepository( "distributedWekaSpark2Dev", latestCompatibleVersion, System.out );
       }
 
       // see if we can install a netlib native package to speed up linear regression in Weka.
