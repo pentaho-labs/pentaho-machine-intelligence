@@ -1,5 +1,6 @@
 package org.pentaho.pmi.engines;
 
+import org.pentaho.di.core.encryption.Encr;
 import org.pentaho.pmi.SchemeUtils;
 import org.pentaho.pmi.SupervisedScheme;
 import org.pentaho.pmi.UnsupportedSchemeException;
@@ -9,8 +10,10 @@ import weka.core.OptionHandler;
 import weka.core.Utils;
 import weka.core.WekaPackageClassLoaderManager;
 
+import java.io.ObjectStreamClass;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,10 +26,34 @@ public class DL4jClassifierScheme extends SupervisedScheme {
   protected Classifier m_underlyingScheme;
   protected String m_schemeName;
 
+  protected List<String> m_hiddenProps = new ArrayList<>();
+
   public DL4jClassifierScheme( String schemeName ) throws Exception {
     super( schemeName );
 
     instantiateDL4jClassifier( schemeName );
+
+    // Assume CE
+    m_hiddenProps.add( "numGPUs" );
+    m_hiddenProps.add( "prefetchBufferSize" );
+    m_hiddenProps.add( "parameterAveragingFrequency" );
+
+    try {
+      Class<?> checkerClass = Class.forName( "org.pentaho.pmi.Checker" );
+      ObjectStreamClass c = ObjectStreamClass.lookup( checkerClass );
+      long serialID = c.getSerialVersionUID();
+      if (c.getSerialVersionUID() == 16139L) {
+        Method m = checkerClass.getDeclaredMethod( "getEncrypted" );
+        Object result = m.invoke( null );
+        if ( result != null ) {
+          if ( Encr.decryptPassword( result.toString() ).equals( "The quick brown fox jumped over the lazy green SpongeBob" ) ) {
+            m_hiddenProps.clear();
+          }
+        }
+      }
+    } catch ( Exception e ) {
+
+    }
   }
 
   protected void instantiateDL4jClassifier( String schemeName ) throws Exception {
@@ -141,7 +168,7 @@ public class DL4jClassifierScheme extends SupervisedScheme {
   }
 
   @Override public Map<String, Object> getSchemeInfo() throws Exception {
-    return SchemeUtils.getSchemeParameters( m_underlyingScheme );
+    return SchemeUtils.getSchemeParameters( m_underlyingScheme, m_hiddenProps );
   }
 
   @Override public void setSchemeOptions( String[] options ) throws Exception {
@@ -183,7 +210,7 @@ public class DL4jClassifierScheme extends SupervisedScheme {
     }
     // Just copy over option settings from the supplied scheme, so that we avoid consuming
     // memory for large trained models (model gets loaded again when transformation is executed)
-    ((OptionHandler) m_underlyingScheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    ( (OptionHandler) m_underlyingScheme ).setOptions( ( (OptionHandler) scheme ).getOptions() );
     // m_underlyingScheme = (Classifier) scheme;
   }
 }

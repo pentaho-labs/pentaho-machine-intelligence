@@ -996,7 +996,8 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return result;
   }
 
-  protected Attribute constructAttribute( ArffMeta current, List<Object[]> trainingRows ) throws KettleException {
+  protected Attribute constructAttribute( ArffMeta current, List<Object[]> trainingRows )
+      throws KettleException {
 
     Attribute result = null;
     if ( current.getArffType() == ArffMeta.DATE || current.getArffType() == ArffMeta.NUMERIC ) {
@@ -1005,12 +1006,18 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
       result = new Attribute( current.getFieldName(), (List<String>) null );
     } else if ( current.getArffType() == ArffMeta.NOMINAL ) {
       String legalVals = current.getNominalVals();
+      // if legal values supplied, then use the supplied order
       if ( !Const.isEmpty( legalVals ) ) {
-        TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( legalVals ) );
-        ArrayList<String> sortedVals = new ArrayList<>( ts );
-        result = new Attribute( current.getFieldName(), sortedVals );
+        /* if ( !dontSortNominals ) {
+          TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( legalVals ) );
+          ArrayList<String> sortedVals = new ArrayList<>( ts );
+          result = new Attribute( current.getFieldName(), sortedVals );
+        } else { */
+        ArrayList<String> preOrdered = new ArrayList<>( ArffMeta.stringToVals( legalVals ) );
+        result = new Attribute( current.getFieldName(), preOrdered );
+        // }
       } else {
-        // check to see if the incoming field has indexed values
+        // check to see if the incoming field has indexed values and sort values
         ValueMetaInterface
             inField =
             m_trainingRowMeta.getValueMeta( m_trainingFieldIndexes.get( current.getFieldName() ) );

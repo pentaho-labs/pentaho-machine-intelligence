@@ -359,6 +359,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
 
     Object model = wsm.getModel();
     Instances header = wsm.getHeader();
+    header = header.stringFreeStructure(); // make sure we don't serialize any string/relational values into the model file
     OutputStream os = new FileOutputStream( saveTo );
 
     if ( saveTo.getName().toLowerCase().endsWith( ".gz" ) ) { //$NON-NLS-1$
