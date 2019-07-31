@@ -934,7 +934,7 @@ public class RClassifierScheme extends SupervisedScheme {
 
     // Just copy over option settings from the supplied scheme, so that we avoid consuming
     // memory for large trained models (model gets loaded again when transformation is executed)
-    ((OptionHandler) m_scheme).setOptions( ((OptionHandler) scheme).getOptions() );
+    ( (OptionHandler) m_scheme ).setOptions( ( (OptionHandler) scheme ).getOptions() );
     // m_scheme = (Classifier) scheme;
     m_mlrLearner = configuredSchemeTag;
   }

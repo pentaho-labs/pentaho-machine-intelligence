@@ -166,7 +166,19 @@ public class SchemeUtils {
    * @return a map of property and values
    * @throws Exception if a problem occurs
    */
-  public static Map<String, Object> getSchemeParameters( Object target ) throws Exception {
+  public static Map<String, Object> getSchemeParameters(Object target) throws Exception {
+    return getSchemeParameters( target, null );
+  }
+
+  /**
+   * Constructs a map of property names and values for the supplied Object.
+   *
+   * @param target the object to build the property map for
+   * @param hiddenParams a list of parameters that should be hidden (i.e not displayed in the GUI). Can be null
+   * @return a map of property and values
+   * @throws Exception if a problem occurs
+   */
+  public static Map<String, Object> getSchemeParameters( Object target, List<String> hiddenParams) throws Exception {
     Map<String, Object> schemeMap = new LinkedHashMap<>();
 
     schemeMap.put( "topLevelClass", target.getClass().getCanonicalName() );
@@ -222,7 +234,8 @@ public class SchemeUtils {
       for ( int i = 0; i < properties.length; i++ ) {
         Map<String, Object>
             propertyMap =
-            getPropertyMap( target, i, properties, methods, sortedPropOrderings, labels, tipTexts, values );
+            getPropertyMap( target, i, properties, methods, sortedPropOrderings, labels, tipTexts, values,
+                hiddenParams == null ?new ArrayList<>(  ) : hiddenParams );
         if ( propertyMap != null ) {
           propertyList.put( propertyMap.get( "name" ).toString(), propertyMap );
         }
@@ -233,7 +246,8 @@ public class SchemeUtils {
   }
 
   protected static Map<String, Object> getPropertyMap( Object target, int i, PropertyDescriptor[] properties,
-      MethodDescriptor[] methods, int[] sortedPropOrderings, String[] labels, String[] tipTexts, Object[] values ) {
+      MethodDescriptor[] methods, int[] sortedPropOrderings, String[] labels, String[] tipTexts, Object[] values,
+      List<String> hiddenProps) {
 
     if ( properties[sortedPropOrderings[i]].isHidden() ) {
       return null;
@@ -243,7 +257,7 @@ public class SchemeUtils {
     Method getter = properties[sortedPropOrderings[i]].getReadMethod();
     Method setter = properties[sortedPropOrderings[i]].getWriteMethod();
     Class<?> type = properties[sortedPropOrderings[i]].getPropertyType();
-    if ( getter == null || setter == null ) {
+    if ( getter == null || setter == null || hiddenProps.contains( name )) {
       return null;
     }
     Map<String, Object> propertyMap = new HashMap<String, Object>();
