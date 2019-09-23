@@ -165,6 +165,13 @@ public abstract class Scheme {
   public abstract boolean canHandleStringAttributes();
 
   /**
+   * Subclass should return true if the scheme can handle environment variables with respect to its options
+   *
+   * @return true if the scheme can handle environment variables
+   */
+  public abstract boolean supportsEnvironmentVariables();
+
+  /**
    * Get a map of meta information about the scheme and its parameters, useful for building editor dialogs
    *
    * @return a map of meta information about the scheme and its parameters

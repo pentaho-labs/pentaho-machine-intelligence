@@ -23,6 +23,7 @@
 package org.pentaho.pmi;
 
 import org.pentaho.pmi.engines.DL4jEngine;
+import org.pentaho.pmi.engines.KerasEngine;
 import org.pentaho.pmi.engines.MLlibEngine;
 import org.pentaho.pmi.engines.PythonEngine;
 import org.pentaho.pmi.engines.REngine;
@@ -87,6 +88,7 @@ public abstract class PMIEngine {
         s_availableEngines.put( REngine.ENGINE_NAME, REngine.ENGINE_CLASS );
         s_availableEngines.put( MLlibEngine.ENGINE_NAME, MLlibEngine.ENGINE_CLASS );
         s_availableEngines.put( DL4jEngine.ENGINE_NAME, DL4jEngine.ENGINE_CLASS );
+        s_availableEngines.put( KerasEngine.ENGINE_NAME, KerasEngine.ENGINE_CLASS );
       }
     }
   }

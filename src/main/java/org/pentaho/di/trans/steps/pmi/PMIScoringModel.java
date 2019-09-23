@@ -29,6 +29,7 @@ import weka.classifiers.evaluation.Evaluation;
 import weka.clusterers.Clusterer;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.LogHandler;
 import weka.core.pmml.PMMLModel;
 
 import java.io.Serializable;
@@ -62,6 +63,9 @@ public abstract class PMIScoringModel implements Serializable {
     if ( getModel() instanceof PMMLModel ) {
       LogAdapter logger = new LogAdapter( log );
       ( (PMMLModel) getModel() ).setLog( logger );
+    } else if ( getModel() instanceof LogHandler ) {
+      LogAdapter logger = new LogAdapter( log );
+      ( (LogHandler) getModel() ).setLog( logger );
     }
   }
 

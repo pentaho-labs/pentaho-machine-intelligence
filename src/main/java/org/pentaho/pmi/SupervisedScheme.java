@@ -98,6 +98,16 @@ public abstract class SupervisedScheme extends Scheme {
   }
 
   /**
+   * Subclass should return true if the scheme can handle environment variables with respect to its options
+   *
+   * @return This default method returns false, as just about all classifiers/clusterers in Weka do not (yet) handle
+   * environment variables
+   */
+  @Override public boolean supportsEnvironmentVariables() {
+    return false;
+  }
+
+  /**
    * Takes the currently configured classifier and returns an adjusted one (i.e. wrapped in a weka.classifiers.meta.FilteredClassifier)
    * that applies any sampling and preprocessing.
    *

@@ -24,7 +24,6 @@ import java.util.Map;
 public class DL4jClassifierScheme extends SupervisedScheme {
 
   protected Classifier m_underlyingScheme;
-  protected String m_schemeName;
 
   protected List<String> m_hiddenProps = new ArrayList<>();
 

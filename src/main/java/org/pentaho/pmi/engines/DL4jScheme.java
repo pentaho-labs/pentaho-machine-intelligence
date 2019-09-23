@@ -14,7 +14,7 @@ import java.util.List;
 public class DL4jScheme {
 
   /**
-   * A list of those global schemes that are not supported in Spark MLlib 1.6
+   * A list of those global schemes that are not supported in DL4j
    */
   protected static List<String>
       s_excludedSchemes =

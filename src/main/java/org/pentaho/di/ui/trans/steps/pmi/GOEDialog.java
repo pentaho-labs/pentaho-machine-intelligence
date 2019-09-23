@@ -36,6 +36,7 @@ import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Scrollable;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
@@ -89,6 +90,8 @@ public class GOEDialog extends Dialog {
 
   protected int m_returnValue;
 
+  protected String m_propertyGroupingCategory = "";
+
   @SuppressWarnings( "unchecked" ) public GOEDialog( Shell shell, int i, Object objectToEdit, VariableSpace vars )
       throws Exception {
     super( shell, i );
@@ -98,6 +101,19 @@ public class GOEDialog extends Dialog {
     m_objectToEditMeta =
         m_objectToEdit instanceof Scheme ? ( (Scheme) m_objectToEdit ).getSchemeInfo() :
             SchemeUtils.getSchemeParameters( m_objectToEdit );
+    m_properties = (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
+    m_props = PropsUI.getInstance();
+    m_vars = vars;
+  }
+
+  @SuppressWarnings( "unchecked" )
+  public GOEDialog( Shell shell, int i, Object objectToEdit, Map<String, Object> objectToEditMeta,
+      VariableSpace vars ) {
+    super( shell, i );
+
+    m_parent = shell;
+    m_objectToEdit = objectToEdit;
+    m_objectToEditMeta = objectToEditMeta;
     m_properties = (Map<String, Map<String, Object>>) m_objectToEditMeta.get( "properties" );
     m_props = PropsUI.getInstance();
     m_vars = vars;
@@ -113,6 +129,9 @@ public class GOEDialog extends Dialog {
     m_shell.setLayout( formLayout );
     String title = m_objectToEditMeta.get( "topLevelClass" ).toString();
     title = title.substring( title.lastIndexOf( '.' ) + 1 );
+    if ( m_propertyGroupingCategory.length() > 0 ) {
+      title = m_propertyGroupingCategory;
+    }
     m_shell.setText( title );
 
     buildEditorSheet();
@@ -134,6 +153,14 @@ public class GOEDialog extends Dialog {
     }
 
     return m_returnValue;
+  }
+
+  public void setPropertyGroupingCategory( String category ) {
+    m_propertyGroupingCategory = category;
+  }
+
+  public String getPropertyGroupingCategory() {
+    return m_propertyGroupingCategory;
   }
 
   private void cancel() {
@@ -231,6 +258,9 @@ public class GOEDialog extends Dialog {
     lastControl = null;
 
     String helpInfo = (String) m_objectToEditMeta.get( "helpSummary" );
+    if ( m_propertyGroupingCategory.length() > 0 ) {
+      helpInfo = "Options for " + m_propertyGroupingCategory;
+    }
     String helpSynopsis = (String) m_objectToEditMeta.get( "helpSynopsis" );
     if ( !Const.isEmpty( helpInfo ) ) {
       Group helpGroup = new Group( m_shell, SWT.SHADOW_NONE );
@@ -284,6 +314,13 @@ public class GOEDialog extends Dialog {
       final String type = (String) propDetails.get( "type" );
       String propLabelText = (String) propDetails.get( "label" );
       final Object value = propDetails.get( "value" );
+      String category = (String) propDetails.get( "category" );
+
+      if ( m_propertyGroupingCategory != null ) {
+        if ( category == null || category.length() == 0 || !category.equalsIgnoreCase( m_propertyGroupingCategory ) ) {
+          continue;
+        }
+      }
 
       final Label propLabel = new Label( m_shell, SWT.RIGHT );
       m_props.setLook( propLabel );
@@ -455,10 +492,19 @@ public class GOEDialog extends Dialog {
         lastControl = boolBut;
         m_schemeWidgets.put( propName, boolBut );
       } else {
-        Text propVar = new Text( m_shell, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        Scrollable
+            propVar =
+            m_objectToEdit instanceof Scheme && ( (Scheme) m_objectToEdit ).supportsEnvironmentVariables() ?
+                new TextVar( m_vars, m_shell, SWT.SINGLE | SWT.LEAD | SWT.BORDER ) :
+                new Text( m_shell, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        // Text propVar = new Text( m_shell, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
         m_props.setLook( propVar );
         if ( value != null ) {
-          propVar.setText( value.toString() );
+          if ( propVar instanceof Text ) {
+            ( (Text) propVar ).setText( value.toString() );
+          } else {
+            ( (TextVar) propVar ).setText( value.toString() );
+          }
         }
         // propVar.addModifyListener( m_simpleModifyListener );
         propVar.setLayoutData( getFirstPromptFormData( propLabel ) );
