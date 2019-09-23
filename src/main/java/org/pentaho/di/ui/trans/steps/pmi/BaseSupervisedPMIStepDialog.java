@@ -44,6 +44,7 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Scrollable;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
@@ -90,8 +91,10 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.pentaho.di.core.Const.MARGIN;
 import static org.pentaho.di.core.Const.getSharedObjectsFile;
@@ -733,6 +736,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
         m_inputMeta.setChanged();
         checkWidgets();
         populateSchemeTab( true, m_inputMeta );
+        checkWidgets();
       }
     } );
 
@@ -1186,8 +1190,7 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     }
   }
 
-  @SuppressWarnings( "unchecked" )
-  protected void buildPropertySheet() {
+  @SuppressWarnings( "unchecked" ) protected void buildPropertySheet() {
 
     for ( Control k : m_schemeGroup.getChildren() ) {
       k.dispose();
@@ -1243,6 +1246,15 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
 
     m_properties = (Map<String, Map<String, Object>>) m_topLevelSchemeInfo.get( "properties" );
 
+    Set<String> propGroupings = new LinkedHashSet<>();
+    for ( Map.Entry<String, Map<String, Object>> e : m_properties.entrySet() ) {
+      Map<String, Object> propDetails = e.getValue();
+      String category = (String) propDetails.get( "category" );
+      if ( category != null && category.length() > 0 ) {
+        propGroupings.add( category );
+      }
+    }
+
     for ( Map.Entry<String, Map<String, Object>> e : m_properties.entrySet() ) {
       final String propName = e.getKey();
       final Map<String, Object> propDetails = e.getValue();
@@ -1250,6 +1262,12 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
       String type = (String) propDetails.get( "type" );
       String propLabelText = (String) propDetails.get( "label" );
       final Object value = propDetails.get( "value" );
+      String category = (String) propDetails.get( "category" );
+
+      if ( category != null && category.length() > 0 ) {
+        // skip, and we'll create a button for each category later
+        continue;
+      }
 
       Label propLabel = new Label( m_schemeGroup, SWT.RIGHT );
       props.setLook( propLabel );
@@ -1433,16 +1451,58 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
             m_schemeWidgets.put( propName, pickListCombo );
 */
       } else {
-        Text propVar = new Text( m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        Scrollable
+            propVar =
+            m_scheme.supportsEnvironmentVariables() ?
+                new TextVar( transMeta, m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER ) :
+                new Text( m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        // Text propVar = new Text( m_schemeGroup, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
         props.setLook( propVar );
         if ( value != null ) {
-          propVar.setText( value.toString() );
+          if ( propVar instanceof Text ) {
+            ( (Text) propVar ).setText( value.toString() );
+          } else {
+            ( (TextVar) propVar ).setText( value.toString() );
+          }
         }
-        propVar.addModifyListener( m_simpleModifyListener );
+        if ( propVar instanceof Text ) {
+          ( (Text) propVar ).addModifyListener( m_simpleModifyListener );
+        } else {
+          ( (TextVar) propVar ).addModifyListener( m_simpleModifyListener );
+        }
         propVar.setLayoutData( getFirstPromptFormData( propLabel ) );
         lastControl = propVar;
         m_schemeWidgets.put( propName, propVar );
       }
+    }
+
+    // create a button for each category
+    for ( String category : propGroupings ) {
+      Label catLab = new Label( m_schemeGroup, SWT.RIGHT );
+      props.setLook( catLab );
+      catLab.setText( category );
+      catLab.setLayoutData( getFirstLabelFormData() );
+
+      Button catBut = new Button( m_schemeGroup, SWT.PUSH );
+      props.setLook( catBut );
+      catBut.setText( "Edit..." );
+      catBut.setLayoutData( getFirstPromptFormData( catLab ) );
+      catBut.addSelectionListener( new SelectionAdapter() {
+        @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+          super.widgetSelected( selectionEvent );
+          catBut.setEnabled( false );
+          try {
+            GOEDialog dialog = new GOEDialog( shell, SWT.OK | SWT.CANCEL, m_scheme, m_topLevelSchemeInfo, transMeta );
+            dialog.setPropertyGroupingCategory( category );
+            dialog.open();
+          } catch ( Exception ex ) {
+            ex.printStackTrace();
+          } finally {
+            catBut.setEnabled( true );
+          }
+        }
+      } );
+      lastControl = catBut;
     }
 
     m_schemeGroup.layout();
@@ -1937,72 +1997,76 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     // Check for IterableClassifier && evaluation mode
     if ( m_scheme.supportsResumableTraining() && m_rowsToProcessDropDown.getText().equalsIgnoreCase( "ALL" ) && (
         currentEvalSetting.equalsIgnoreCase( Evaluator.EvalMode.NONE.toString() ) || currentEvalSetting
-            .equalsIgnoreCase( Evaluator.EvalMode.SEPARATE_TEST_SET.toString() ) ) && m_modelLoadField == null ) {
-      m_modelLoadLab = new Label( m_schemeComposite, SWT.RIGHT );
-      m_modelLoadLab.setText( BaseMessages.getString( PKG, "BasePMIStepDialog.IterativeModelLoad.Label" ) );
-      props.setLook( m_modelLoadLab );
-      lastControl = m_modelFilenameField;
-      m_modelLoadLab.setLayoutData( getFirstLabelFormData() );
+            .equalsIgnoreCase( Evaluator.EvalMode.SEPARATE_TEST_SET.toString() ) ) ) {
+      if ( m_modelLoadField == null ) {
+        m_modelLoadLab = new Label( m_schemeComposite, SWT.RIGHT );
+        m_modelLoadLab.setText( BaseMessages.getString( PKG, "BasePMIStepDialog.IterativeModelLoad.Label" ) );
+        props.setLook( m_modelLoadLab );
+        lastControl = m_modelFilenameField;
+        m_modelLoadLab.setLayoutData( getFirstLabelFormData() );
 
-      m_modelLoadField = new TextVar( transMeta, m_schemeComposite, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
-      props.setLook( m_modelLoadField );
-      m_modelLoadField.setLayoutData( getFirstPromptFormData( m_modelLoadLab ) );
+        m_modelLoadField = new TextVar( transMeta, m_schemeComposite, SWT.SINGLE | SWT.LEAD | SWT.BORDER );
+        props.setLook( m_modelLoadField );
+        m_modelLoadField.setLayoutData( getFirstPromptFormData( m_modelLoadLab ) );
 
-      m_browseLoadModelButton = new Button( m_schemeComposite, SWT.PUSH );
-      props.setLook( m_browseLoadModelButton );
-      m_browseLoadModelButton
-          .setText( BaseMessages.getString( PKG, "BasePMIStepDialog.BrowseModelOutputDirectory.Button" ) );
-      m_browseLoadModelButton.setLayoutData( getSecondLabelFormData( m_modelLoadField ) );
+        m_browseLoadModelButton = new Button( m_schemeComposite, SWT.PUSH );
+        props.setLook( m_browseLoadModelButton );
+        m_browseLoadModelButton
+            .setText( BaseMessages.getString( PKG, "BasePMIStepDialog.BrowseModelOutputDirectory.Button" ) );
+        m_browseLoadModelButton.setLayoutData( getSecondLabelFormData( m_modelLoadField ) );
 
-      m_browseLoadModelButton.addSelectionListener( new SelectionAdapter() {
-        @Override public void widgetSelected( SelectionEvent selectionEvent ) {
-          super.widgetSelected( selectionEvent );
-          FileDialog dialog = new FileDialog( shell, SWT.OPEN );
+        m_browseLoadModelButton.addSelectionListener( new SelectionAdapter() {
+          @Override public void widgetSelected( SelectionEvent selectionEvent ) {
+            super.widgetSelected( selectionEvent );
+            FileDialog dialog = new FileDialog( shell, SWT.OPEN );
 
-          String modelPath = dialog.open();
-          boolean ok = false;
-          File updatedModelPath = null;
-          if ( !Const.isEmpty( modelPath ) && modelPath.toLowerCase().startsWith( "file:" ) ) {
-            modelPath = modelPath.replace( " ", "%20" );
+            String modelPath = dialog.open();
+            boolean ok = false;
+            File updatedModelPath = null;
+            if ( !Const.isEmpty( modelPath ) && modelPath.toLowerCase().startsWith( "file:" ) ) {
+              modelPath = modelPath.replace( " ", "%20" );
 
-            try {
-              updatedModelPath = new File( new java.net.URI( modelPath ) );
-              ok = true;
-            } catch ( URISyntaxException e ) {
-              e.printStackTrace();
-            }
-          } else {
-            updatedModelPath = new File( modelPath );
-            ok = true;
-          }
-          if ( ok && updatedModelPath.exists() && updatedModelPath.isFile() ) {
-            if ( log != null ) {
-              log.logBasic( "Loading/checking model: " + updatedModelPath.toString() );
               try {
-                List<Object> loaded = BaseSupervisedPMIStepData.loadModel( updatedModelPath.toString(), log );
-                m_modelLoadField.setText( updatedModelPath.toString() );
-
-                // Apply loaded model options to dialog
-                m_scheme.setConfiguredScheme( loaded.get( 0 ) );
-                m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
-
-                buildPropertySheet();
-              } catch ( Exception e ) {
-                // TODO popup error dialog
+                updatedModelPath = new File( new java.net.URI( modelPath ) );
+                ok = true;
+              } catch ( URISyntaxException e ) {
                 e.printStackTrace();
+              }
+            } else {
+              updatedModelPath = new File( modelPath );
+              ok = true;
+            }
+            if ( ok && updatedModelPath.exists() && updatedModelPath.isFile() ) {
+              if ( log != null ) {
+                log.logBasic( "Loading/checking model: " + updatedModelPath.toString() );
+                try {
+                  List<Object> loaded = BaseSupervisedPMIStepData.loadModel( updatedModelPath.toString(), log );
+                  m_modelLoadField.setText( updatedModelPath.toString() );
+
+                  // Apply loaded model options to dialog
+                  m_scheme.setConfiguredScheme( loaded.get( 0 ) );
+                  m_topLevelSchemeInfo = m_scheme.getSchemeInfo();
+
+                  buildPropertySheet();
+                } catch ( Exception e ) {
+                  // TODO popup error dialog
+                  e.printStackTrace();
+                }
               }
             }
           }
-        }
-      } );
+        } );
 
-      m_schemeGroup.layout();
-      m_schemeComposite.layout();
+        m_schemeGroup.layout();
+        m_schemeComposite.layout();
+      }
     } else if ( m_modelLoadField != null ) {
       m_modelLoadLab.dispose();
       m_modelLoadField.dispose();
+      m_browseLoadModelButton.dispose();
       m_modelLoadLab = null;
       m_modelLoadField = null;
+      m_browseLoadModelButton = null;
 
       m_schemeGroup.layout();
       m_schemeComposite.layout();

@@ -39,6 +39,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 import org.pentaho.di.trans.steps.reservoirsampling.ReservoirSamplingData;
 import org.pentaho.dm.commons.ArffMeta;
+import org.pentaho.dm.commons.LogAdapter;
 import org.pentaho.pmi.Evaluator;
 import org.pentaho.pmi.PMIEngine;
 import org.pentaho.pmi.Scheme;
@@ -49,8 +50,11 @@ import weka.classifiers.evaluation.Evaluation;
 import weka.core.Attribute;
 import weka.core.BatchPredictor;
 import weka.core.DenseInstance;
+import weka.core.Environment;
+import weka.core.EnvironmentHandler;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.LogHandler;
 import weka.core.OptionHandler;
 import weka.core.SerializationHelper;
 import weka.core.Utils;
@@ -368,7 +372,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
       for ( String stratKey : m_prequentialEvaluator.keySet() ) {
         result[i++] =
             m_prequentialEvaluator.get( stratKey )
-                .getEvalRow( m_rowHandlingMode == Stratified ? stratKey : null, m_outputRowMeta, -1 );
+                .getEvalRow( m_rowHandlingMode == Stratified ? stratKey : null, m_outputRowMeta, -1, log );
       }
     } else {
       int i = 0;
@@ -603,11 +607,11 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
             m_batchPredictorPreferredBatchSize = Integer.parseInt( vars.environmentSubstitute( prefBatchS ) );
           }
         }
-        evaluator.performEvaluation( null, log );
+        evaluator.performEvaluation( null, log, vars );
 
         outputRow =
             evaluator
-                .getEvalRow( stratificationValue, m_outputRowMeta, m_rowHandlingMode == Batch ? m_batchCount : -1 );
+                .getEvalRow( stratificationValue, m_outputRowMeta, m_rowHandlingMode == Batch ? m_batchCount : -1, log );
 
         // build final model on all the data (but only if it is going to be saved somewhere or separate test set eval or there is no eval being done)
         if ( !Const.isEmpty( m_modelOutputPath ) || stepMeta.getEvalMode() == Evaluator.EvalMode.SEPARATE_TEST_SET
@@ -618,10 +622,12 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
             // TODO load model and perform training iterations with trainingData
             List<Object> loaded = loadModel( vars.environmentSubstitute( stepMeta.getResumableModelPath() ), log );
             trainedFullModel = (Classifier) loaded.get( 0 );
+            Evaluator.enableClassifierLoggingIfSupported( trainedFullModel, log );
+            Evaluator.configureWekaEnvironmentHandler( trainedFullModel, vars );
             continueIteratingResumable( trainedFullModel, trainingData, stepMeta );
             evaluator.setTrainedClassifier( trainedFullModel );
           } else {
-            trainedFullModel = evaluator.buildFinalModel( log );
+            trainedFullModel = evaluator.buildFinalModel( log, vars );
           }
           m_finalModels.put( evalKey, trainedFullModel );
 
@@ -702,7 +708,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
             }
           }
           if ( evaluator.wasEvaluationPerformed() ) {
-            evaluationOutputRows.add( evaluator.getEvalRow( null, m_outputRowMeta, -1 ) );
+            evaluationOutputRows.add( evaluator.getEvalRow( null, m_outputRowMeta, -1, log ) );
           }
         }
       } else if ( row != null ) {
@@ -754,7 +760,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
                     "stratified separate test set", log, vars );
                 if ( evaluator.wasEvaluationPerformed() ) {
                   evaluationOutputRows.add( evaluator.getEvalRow( m_currentStratificationValue, m_outputRowMeta,
-                      m_rowHandlingMode == Batch ? m_batchCount : -1 ) );
+                      m_rowHandlingMode == Batch ? m_batchCount : -1, log ) );
                 }
 
                 // ready for next batch of test rows
@@ -779,7 +785,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
             // get an evaluation output row
             if ( e.getValue().wasEvaluationPerformed() ) {
               evaluationOutputRows.add( e.getValue()
-                  .getEvalRow( e.getKey(), m_outputRowMeta, m_rowHandlingMode == Batch ? m_batchCount : -1 ) );
+                  .getEvalRow( e.getKey(), m_outputRowMeta, m_rowHandlingMode == Batch ? m_batchCount : -1, log ) );
             }
           }
         }
@@ -793,7 +799,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
                 "stratified test set", log, vars );
             if ( evaluator.wasEvaluationPerformed() ) {
               evaluationOutputRows.add( evaluator.getEvalRow( m_currentStratificationValue, m_outputRowMeta,
-                  m_rowHandlingMode == Batch ? m_batchCount : -1 ) );
+                  m_rowHandlingMode == Batch ? m_batchCount : -1, log ) );
             }
           }
         }
@@ -812,7 +818,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     if ( data.size() > 0 ) {
       Instances testData = buildDataset( trainingHeader, m_testingRowMeta, data, m_testingFieldIndexes, stepMeta );
       try {
-        evaluator.performEvaluation( testData, log );
+        evaluator.performEvaluation( testData, log, vars );
       } catch ( Exception e ) {
         throw new KettleException( e );
       }
@@ -996,8 +1002,7 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
     return result;
   }
 
-  protected Attribute constructAttribute( ArffMeta current, List<Object[]> trainingRows )
-      throws KettleException {
+  protected Attribute constructAttribute( ArffMeta current, List<Object[]> trainingRows ) throws KettleException {
 
     Attribute result = null;
     if ( current.getArffType() == ArffMeta.DATE || current.getArffType() == ArffMeta.NUMERIC ) {
@@ -1227,76 +1232,82 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
             ValueMetaFactory.createValueMeta( BaseMessages.getString( PKG, "BasePMIStepData.KappaStatisticFieldName" ),
                 ValueMetaInterface.TYPE_NUMBER );
         outRowMeta.addValueMeta( vm );
-      }
 
-      // Per-class IR statistics
-      if ( stepMeta.getOutputIRMetrics() && classArffMeta.getArffType() == ArffMeta.NOMINAL ) {
-        String classLabels = classArffMeta.getNominalVals();
-        if ( !Const.isEmpty( classLabels ) ) {
-          TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
-          //String[] labels = classLabels.split( "," );
-          for ( String label : ts ) {
-            label = label.trim();
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.TPRateFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+        // Per-class IR statistics
+        if ( stepMeta.getOutputIRMetrics() ) {
+          String classLabels = classArffMeta.getNominalVals();
+          if ( !Const.isEmpty( classLabels ) ) {
+            TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
+            //String[] labels = classLabels.split( "," );
+            for ( String label : ts ) {
+              label = label.trim();
+              vm =
+                  ValueMetaFactory
+                      .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.TPRateFieldName" ),
+                          ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.FPRateFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory
+                      .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.FPRateFieldName" ),
+                          ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.PrecisionFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory.createValueMeta(
+                      label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.PrecisionFieldName" ),
+                      ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.RecallFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory
+                      .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.RecallFieldName" ),
+                          ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.FMeasureFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory.createValueMeta(
+                      label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.FMeasureFieldName" ),
+                      ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.MCCFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory
+                      .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.MCCFieldName" ),
+                          ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
+            }
           }
         }
-      }
 
-      if ( stepMeta.getOutputAUCMetrics() && classArffMeta.getArffType() == ArffMeta.NOMINAL ) {
-        String classLabels = classArffMeta.getNominalVals();
-        if ( !Const.isEmpty( classLabels ) ) {
-          TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
-          // String[] labels = classLabels.split( "," );
-          for ( String label : ts ) {
-            label = label.trim();
+        if ( stepMeta.getOutputAUCMetrics() ) {
+          String classLabels = classArffMeta.getNominalVals();
+          if ( !Const.isEmpty( classLabels ) ) {
+            TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
+            // String[] labels = classLabels.split( "," );
+            for ( String label : ts ) {
+              label = label.trim();
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.AUCFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory
+                      .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.AUCFieldName" ),
+                          ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
 
-            vm =
-                ValueMetaFactory
-                    .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.PRCFieldName" ),
-                        ValueMetaInterface.TYPE_NUMBER );
-            outRowMeta.addValueMeta( vm );
+              vm =
+                  ValueMetaFactory
+                      .createValueMeta( label + "_" + BaseMessages.getString( PKG, "BasePMIStepData.PRCFieldName" ),
+                          ValueMetaInterface.TYPE_NUMBER );
+              outRowMeta.addValueMeta( vm );
+            }
           }
         }
+
+        // confusion matrix
+        vm =
+            ValueMetaFactory.createValueMeta( BaseMessages.getString( PKG, "BasePMIStepData.ConfusionMatrixName" ),
+                ValueMetaInterface.TYPE_STRING );
+        outRowMeta.addValueMeta( vm );
       }
 
       // TODO - handle plugin evaluation metrics!!

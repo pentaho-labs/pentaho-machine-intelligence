@@ -26,16 +26,23 @@ import org.pentaho.di.core.Const;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.steps.pmi.BaseSupervisedPMIStepMeta;
+import org.pentaho.dm.commons.LogAdapter;
 import weka.classifiers.Classifier;
 import weka.classifiers.evaluation.Evaluation;
 import weka.core.BatchPredictor;
+import weka.core.Environment;
+import weka.core.EnvironmentHandler;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.LogHandler;
 import weka.core.OptionHandler;
 import weka.core.Utils;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.util.Random;
 
 /**
@@ -250,14 +257,48 @@ public class Evaluator {
     return m_evalWasPerformed;
   }
 
+  public static void enableClassifierLoggingIfSupported( Classifier classifier, LogChannelInterface log ) {
+    if ( classifier instanceof LogHandler && log != null ) {
+      ( (LogHandler) classifier ).setLog( new LogAdapter( log ) );
+    }
+  }
+
+  public static void configureWekaEnvironmentHandler( Object handler, VariableSpace vars ) {
+    if ( handler instanceof EnvironmentHandler ) {
+      Environment env = new Environment();
+
+      if ( vars != null ) {
+        for ( String var : vars.listVariables() ) {
+          // if ( var.startsWith( "Internal." ) ) {
+            String value = vars.getVariable( var );
+            if ( value.toLowerCase().startsWith( "file:" ) ) {
+              value = value.replace( " ", "%20" );
+              try {
+                File temp = new File( new java.net.URI( value ) );
+                value = temp.toString();
+              } catch ( URISyntaxException e ) {
+                e.printStackTrace();
+              }
+            }
+            env.addVariable( var, value );
+          //}
+        }
+      }
+
+      ( (EnvironmentHandler) handler ).setEnvironment( env );
+    }
+  }
+
   /**
    * Perform an evaluation.
    *
    * @param separateTestData optional separate test data (used in separate test set evaluation)
    * @param log              the logging object to use
+   * @param vars             Kettle environment variables
    * @throws Exception if a problem occurs
    */
-  public void performEvaluation( Instances separateTestData, LogChannelInterface log ) throws Exception {
+  public void performEvaluation( Instances separateTestData, LogChannelInterface log, VariableSpace vars )
+      throws Exception {
     if ( m_trainingData == null ) {
       throw new IllegalStateException(
           BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.EvaluatorNotInitialized" ) );
@@ -286,6 +327,8 @@ public class Evaluator {
       Instances train = new Instances( m_trainingData, 0, trainSize );
       Instances test = new Instances( m_trainingData, trainSize, testSize );
       Classifier classifierCopy = copyClassifierTemplate();
+      enableClassifierLoggingIfSupported( classifierCopy, log );
+      configureWekaEnvironmentHandler( classifierCopy, vars );
       classifierCopy.buildClassifier( train );
       if ( m_computeAUC || ( m_templateClassifier instanceof BatchPredictor && ( (BatchPredictor) m_templateClassifier )
           .implementsMoreEfficientBatchPrediction() ) ) {
@@ -312,6 +355,8 @@ public class Evaluator {
         log.logDetailed( BaseMessages
             .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Message.TrainingModelForFold", ( i + 1 ) ) );
         Classifier foldClassifier = copyClassifierTemplate();
+        enableClassifierLoggingIfSupported( foldClassifier, log );
+        configureWekaEnvironmentHandler( foldClassifier, vars );
         Instances train = m_trainingData.trainCV( m_xValFolds, i, r );
         m_eval.setPriors( train );
         foldClassifier.buildClassifier( train );
@@ -354,6 +399,8 @@ public class Evaluator {
         throw new IllegalStateException( BaseMessages
             .getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.FinalClassifierHasNotBeenTrainedYet" ) );
       }
+      enableClassifierLoggingIfSupported( m_classifier, log );
+      configureWekaEnvironmentHandler( m_classifier, vars );
       // log.logBasic( "Performing separate test set evaluation..." );
       if ( m_computeAUC || ( m_templateClassifier instanceof BatchPredictor && ( (BatchPredictor) m_templateClassifier )
           .implementsMoreEfficientBatchPrediction() ) ) {
@@ -395,11 +442,12 @@ public class Evaluator {
   /**
    * Build a final model using all of the available training data.
    *
-   * @param log the log to write to
+   * @param log  the log to write to
+   * @param vars Kettle environment variables
    * @return a final model
    * @throws Exception if a problem occurs
    */
-  public Classifier buildFinalModel( LogChannelInterface log ) throws Exception {
+  public Classifier buildFinalModel( LogChannelInterface log, VariableSpace vars ) throws Exception {
 
     if ( m_trainingData == null ) {
       throw new IllegalStateException(
@@ -411,7 +459,9 @@ public class Evaluator {
       log.logBasic( BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "BasePMIStep.Info.BuildingFinalModel",
           m_classifier.getClass().getCanonicalName() + " " + Utils
               .joinOptions( ( (OptionHandler) m_classifier ).getOptions() ) ) );
+      enableClassifierLoggingIfSupported( m_classifier, log );
     }
+    configureWekaEnvironmentHandler( m_classifier, vars );
 
     m_classifier.buildClassifier( m_trainingData );
 
@@ -424,9 +474,11 @@ public class Evaluator {
    * @param stratificationValue optional stratification value
    * @param outputRowMeta       the metadata of the output row structure
    * @param batchNumber         the current batch number (if applicable)
+   * @param log                 log to use
    * @return a row of evaluation metrics
    */
-  public Object[] getEvalRow( String stratificationValue, RowMetaInterface outputRowMeta, int batchNumber ) {
+  public Object[] getEvalRow( String stratificationValue, RowMetaInterface outputRowMeta, int batchNumber,
+      LogChannelInterface log ) {
     if ( m_trainingData == null ) {
       throw new IllegalStateException(
           BaseMessages.getString( BaseSupervisedPMIStepMeta.PKG, "Evaluator.Error.EvaluatorNotInitialized" ) );
@@ -507,6 +559,16 @@ public class Evaluator {
             outputRow[i++] = m_eval.areaUnderPRC( j );
           }
         }
+
+        try {
+          String matrix = m_eval.toMatrixString();
+          outputRow[i] = matrix;
+          if ( log != null ) {
+            log.logBasic( matrix );
+          }
+        } catch ( Exception ex ) {
+          ex.printStackTrace();
+        }
       }
       return outputRow;
     }
@@ -540,7 +602,5 @@ public class Evaluator {
   /**
    * Enum for evaluation modes
    */
-  public enum EvalMode {
-    NONE, PERCENTAGE_SPLIT, CROSS_VALIDATION, SEPARATE_TEST_SET, PREQUENTIAL;
-  }
+  public enum EvalMode {NONE, PERCENTAGE_SPLIT, CROSS_VALIDATION, SEPARATE_TEST_SET, PREQUENTIAL;}
 }

@@ -342,6 +342,8 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
       oi.close();
     }
 
+    Evaluator.configureWekaEnvironmentHandler( model, space );
+
     PMIScoringModel
         wsm =
         classPriorEval == null ? PMIScoringModel.createScorer( model ) :
@@ -359,7 +361,8 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
 
     Object model = wsm.getModel();
     Instances header = wsm.getHeader();
-    header = header.stringFreeStructure(); // make sure we don't serialize any string/relational values into the model file
+    header =
+        header.stringFreeStructure(); // make sure we don't serialize any string/relational values into the model file
     OutputStream os = new FileOutputStream( saveTo );
 
     if ( saveTo.getName().toLowerCase().endsWith( ".gz" ) ) { //$NON-NLS-1$
@@ -606,11 +609,12 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
    *                   evaluation metrics will be produced. If non-null, then evaluation metrics will be updated by
    *                   comparing the actual to predicted class values for the input rows and null is returnd
    * @param meta       step metadata for PMIScoring
+   * @param vars       variables to use
    * @return null if inputRows is non-null, or a row containing eval statistics if inputRows is null.
    * @throws Exception if a problem occurs
    */
   public Object[][] evaluateForRows( RowMetaInterface inputMeta, RowMetaInterface outputMeta, List<Object[]> inputRows,
-      PMIScoringMeta meta ) throws Exception {
+      PMIScoringMeta meta, VariableSpace vars ) throws Exception {
 
     if ( !getModel().isSupervisedLearningModel() ) {
       throw new Exception( "Model is not a supervised one" );
@@ -621,7 +625,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
     if ( inputRows == null || inputRows.size() == 0 ) {
       // end of input data - generate eval output row
       outputRow = new Object[1][0];
-      outputRow[0] = m_eval.getEvalRow( null, outputMeta, -1 );
+      outputRow[0] = m_eval.getEvalRow( null, outputMeta, -1, null );
     } else {
       Instances batch = new Instances( getModel().getHeader(), inputRows.size() );
       for ( Object[] r : inputRows ) {
@@ -630,7 +634,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
       }
 
       m_eval.setTrainedClassifier( (Classifier) getModel().getModel() );
-      m_eval.performEvaluation( batch, meta.getLog() );
+      m_eval.performEvaluation( batch, meta.getLog(), vars );
     }
 
     return outputRow;
@@ -659,7 +663,7 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
     Object[] outputRow = null;
     if ( inputRow == null ) {
       // end of input data - generate eval output row
-      outputRow = m_eval.getEvalRow( null, outputMeta, -1 );
+      outputRow = m_eval.getEvalRow( null, outputMeta, -1, null );
     } else {
       Instance
           toPredict =

@@ -37,6 +37,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 import org.pentaho.di.trans.step.errorhandling.StreamInterface;
 import org.pentaho.di.trans.steps.reservoirsampling.ReservoirSamplingData;
 import org.pentaho.dm.commons.ArffMeta;
+import org.pentaho.dm.commons.LogAdapter;
 import org.pentaho.pmi.Evaluator;
 import org.pentaho.pmi.PMIEngine;
 import weka.core.Utils;
@@ -111,6 +112,7 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
         if ( !Const.isEmpty( m_meta.getSchemeCommandLineOptions() ) ) {
           m_data.m_scheme.setSchemeOptions( Utils.splitOptions( m_meta.getSchemeCommandLineOptions() ) );
         }
+
         m_data.m_scheme.setSamplingConfigs( m_meta.getSamplingConfigs() );
         m_data.m_scheme.setPreprocessingConfigs( m_meta.getPreprocessingConfigs() );
 

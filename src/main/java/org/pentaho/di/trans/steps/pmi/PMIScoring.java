@@ -427,13 +427,13 @@ public class PMIScoring extends BaseStep implements StepInterface {
     Object[][]
         outputRows =
         m_meta.getEvaluateRatherThanScore() ?
-            m_data.evaluateForRows( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta ) :
+            m_data.evaluateForRows( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta, this ) :
             m_data.generatePredictions( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta );
 
     if ( finished && m_meta.getEvaluateRatherThanScore() ) {
       // make sure we get the output row that contains eval
       m_batch.clear();
-      outputRows = m_data.evaluateForRows( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta );
+      outputRows = m_data.evaluateForRows( getInputRowMeta(), m_data.getOutputRowMeta(), m_batch, m_meta, this );
     }
 
     if ( log.isDetailed() ) {

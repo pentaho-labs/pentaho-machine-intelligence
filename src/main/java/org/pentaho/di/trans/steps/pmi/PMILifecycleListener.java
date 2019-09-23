@@ -152,6 +152,17 @@ public class PMILifecycleListener implements KettleLifecycleListener {
         weka.core.WekaPackageManager
             .installPackageFromRepository( "wekaDeeplearning4j", latestCompatibleVersion, System.out );
       }
+
+      // TODO
+      weka.core.packageManagement.Package
+          kerasZooPackage =
+          weka.core.WekaPackageManager.getInstalledPackageInfo( "kerasZoo" );
+      if ( kerasZooPackage == null ) {
+        String latestCompatibleVersion = getLatestVersion( "kerasZoo" );
+        System.out.println(
+            "[PMI] kerasZoo package is not installed - attempting to install version " + latestCompatibleVersion );
+        weka.core.WekaPackageManager.installPackageFromRepository( "kerasZoo", latestCompatibleVersion, System.out );
+      }
     } catch ( Exception e ) {
       e.printStackTrace();
     }

@@ -166,19 +166,19 @@ public class SchemeUtils {
    * @return a map of property and values
    * @throws Exception if a problem occurs
    */
-  public static Map<String, Object> getSchemeParameters(Object target) throws Exception {
+  public static Map<String, Object> getSchemeParameters( Object target ) throws Exception {
     return getSchemeParameters( target, null );
   }
 
   /**
    * Constructs a map of property names and values for the supplied Object.
    *
-   * @param target the object to build the property map for
+   * @param target       the object to build the property map for
    * @param hiddenParams a list of parameters that should be hidden (i.e not displayed in the GUI). Can be null
    * @return a map of property and values
    * @throws Exception if a problem occurs
    */
-  public static Map<String, Object> getSchemeParameters( Object target, List<String> hiddenParams) throws Exception {
+  public static Map<String, Object> getSchemeParameters( Object target, List<String> hiddenParams ) throws Exception {
     Map<String, Object> schemeMap = new LinkedHashMap<>();
 
     schemeMap.put( "topLevelClass", target.getClass().getCanonicalName() );
@@ -235,7 +235,7 @@ public class SchemeUtils {
         Map<String, Object>
             propertyMap =
             getPropertyMap( target, i, properties, methods, sortedPropOrderings, labels, tipTexts, values,
-                hiddenParams == null ?new ArrayList<>(  ) : hiddenParams );
+                hiddenParams == null ? new ArrayList<>() : hiddenParams );
         if ( propertyMap != null ) {
           propertyList.put( propertyMap.get( "name" ).toString(), propertyMap );
         }
@@ -247,17 +247,18 @@ public class SchemeUtils {
 
   protected static Map<String, Object> getPropertyMap( Object target, int i, PropertyDescriptor[] properties,
       MethodDescriptor[] methods, int[] sortedPropOrderings, String[] labels, String[] tipTexts, Object[] values,
-      List<String> hiddenProps) {
+      List<String> hiddenProps ) {
 
     if ( properties[sortedPropOrderings[i]].isHidden() ) {
       return null;
     }
     String name = properties[sortedPropOrderings[i]].getDisplayName();
     String origName = name;
+    String category = null;
     Method getter = properties[sortedPropOrderings[i]].getReadMethod();
     Method setter = properties[sortedPropOrderings[i]].getWriteMethod();
     Class<?> type = properties[sortedPropOrderings[i]].getPropertyType();
-    if ( getter == null || setter == null || hiddenProps.contains( name )) {
+    if ( getter == null || setter == null || hiddenProps.contains( name ) ) {
       return null;
     }
     Map<String, Object> propertyMap = new HashMap<String, Object>();
@@ -284,6 +285,8 @@ public class SchemeUtils {
 
       if ( a instanceof OptionMetadata ) {
         name = ( (OptionMetadata) a ).displayName();
+        category = ( (OptionMetadata) a ).category();
+
         String tempTip = ( (OptionMetadata) a ).description();
         name = ( (OptionMetadata) a ).displayName();
         int ci = tempTip.indexOf( '.' );
@@ -429,7 +432,7 @@ public class SchemeUtils {
         Class<?> elementType = getter.getReturnType().getComponentType();
         String typeC = elementType.getCanonicalName();
         int numElements = Array.getLength( value );
-        propertyMap.put( "value", elementType); // the actual class of the array element
+        propertyMap.put( "value", elementType ); // the actual class of the array element
         propertyMap.put( "objectValue", value ); // actual underlying array value
       } else if ( editor instanceof GenericObjectEditor ) {
         String schName = getTextRepresentationOfObjectValue( value );
@@ -442,6 +445,10 @@ public class SchemeUtils {
       propertyMap.put( "label", name );
       // set the tool tip text
       propertyMap.put( "tip-text", tipTexts[sortedPropOrderings[i]] );
+      // set the category (if necessary)
+      if ( category != null && category.length() > 0 ) {
+        propertyMap.put( "category", category );
+      }
 
     } catch ( Exception ex ) {
       ex.printStackTrace();
@@ -538,8 +545,8 @@ public class SchemeUtils {
   /**
    * Checks for the presence of a particular attribute type in the supplied Instances
    *
-   * @param data the Instances to check for the presence of a particular type of attribute
-   * @param type the type of attribute to check for
+   * @param data        the Instances to check for the presence of a particular type of attribute
+   * @param type        the type of attribute to check for
    * @param ignoreClass true if the class attribute (if set) should be ignored when checking
    * @return true if the specified attribute type exists in the Instances
    */
