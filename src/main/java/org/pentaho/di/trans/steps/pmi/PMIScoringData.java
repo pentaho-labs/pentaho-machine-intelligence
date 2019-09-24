@@ -554,7 +554,9 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
     // need to construct an Instance to represent this
     // input row
     Instance toScore = constructInstance( model.getHeader(), inputMeta, inputRow, mappingIndexes, model, false, false );
-    toScore.setClassMissing();
+    if ( supervised ) {
+      toScore.setClassMissing();
+    }
     double[] prediction = model.distributionForInstance( toScore );
 
     // Update the model??
@@ -580,7 +582,8 @@ public class PMIScoringData extends BaseStepData implements StepDataInterface {
     } else {
       int maxProb = Utils.maxIndex( prediction );
       if ( prediction[maxProb] > 0 ) {
-        resultRow[index++] = maxProb;
+        Double newVal = new Double( maxProb );
+        resultRow[index++] = newVal;
       } else {
         String newVal = BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoringData.Message.UnableToPredictCluster" );
         resultRow[index++] = newVal;

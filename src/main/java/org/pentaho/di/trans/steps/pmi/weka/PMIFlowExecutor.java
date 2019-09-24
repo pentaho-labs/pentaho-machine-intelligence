@@ -216,12 +216,11 @@ public class PMIFlowExecutor extends BaseStep implements StepInterface, StepOutp
     } else {
       if ( m_meta.getPassRowsThrough() ) {
         putRow( m_data.getOutputRowMeta(), row );
-      } else {
-        try {
-          m_data.processRow( row, getInputRowMeta() );
-        } catch ( Exception ex ) {
-          throw new KettleException( ex );
-        }
+      }
+      try {
+        m_data.processRow( row, getInputRowMeta() );
+      } catch ( Exception ex ) {
+        throw new KettleException( ex );
       }
     }
 
