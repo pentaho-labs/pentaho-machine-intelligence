@@ -137,12 +137,13 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
         if ( infoStreams.size() == 0 ) {
           throw new KettleException( BaseMessages.getString( PKG, "BasePMIStep.Error.NoIncomingData" ) );
         }
+        String trainingInputStepName = environmentSubstitute( m_meta.getTrainingStepInputName() );
         if ( infoStreams.size() > 1 ) {
           // check that there is a training stream named
           if ( Const.isEmpty( m_meta.getTrainingStepInputName() ) ) {
             throw new KettleException( BaseMessages.getString( PKG, "BasePMIStep.Error.NoTrainingInputStep" ) );
           }
-          String trainingInputStepName = environmentSubstitute( m_meta.getTrainingStepInputName() );
+
           boolean trainingMatch = false;
           for ( StreamInterface input : infoStreams ) {
             if ( input.getSubject().toString().equals( trainingInputStepName ) ) {
@@ -174,6 +175,10 @@ public class BaseSupervisedPMIStep extends BaseStep implements StepInterface {
           }
         } else {
           m_data.m_trainingStream = infoStreams.get( 0 );
+          if ( m_data.m_trainingStream == null ) {
+            throw new KettleException( BaseMessages
+                .getString( PKG, "BasePMIStep.Error.UnableToFindNamedTrainingSource", trainingInputStepName ) );
+          }
         }
 
         m_data.m_trainingRowMeta = getTransMeta().getStepFields( (String) m_data.m_trainingStream.getSubject() );
