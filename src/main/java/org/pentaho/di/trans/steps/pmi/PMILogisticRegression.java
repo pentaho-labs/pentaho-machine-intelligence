@@ -28,7 +28,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMILogisticRegression", image = "WEKAS.svg", name = "PMI Logistic Regression", description = "Train and evaluate a logistic regression model", categoryDescription = "Data Mining" )
+@Step( id = "PMILogisticRegression", image = "WEKAS.svg", name = "PMI Logistic Regression", description = "Train and evaluate a logistic regression model", categoryDescription = "PMI" )
 public class PMILogisticRegression extends BaseSupervisedPMIStepMeta {
 
   public PMILogisticRegression() {

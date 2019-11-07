@@ -28,7 +28,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMINaiveBayesMultinomial", image = "WEKAS.svg", name = "PMI Naive Bayes Multinomial", description = "Train and evaluate a multinomial naive Bayes model", categoryDescription = "Data Mining")
+@Step( id = "PMINaiveBayesMultinomial", image = "WEKAS.svg", name = "PMI Naive Bayes Multinomial", description = "Train and evaluate a multinomial naive Bayes model", categoryDescription = "PMI")
 public class PMINaiveBayesMultinomial extends BaseSupervisedPMIStepMeta {
 
   public PMINaiveBayesMultinomial() {

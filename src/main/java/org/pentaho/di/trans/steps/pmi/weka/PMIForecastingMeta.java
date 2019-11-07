@@ -68,7 +68,7 @@ import weka.core.SerializedObject;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision$
  */
-@Step( id = "PMIForecasting", image = "WEKAS.svg", documentationUrl = "http://wiki.pentaho.com/display/EAI/Weka+Forecasting", name = "PMI Forecasting", description = "This step makes time series forecasts from a pre-built WEKA forecasting model", categoryDescription = "Data Mining" )
+@Step( id = "PMIForecasting", image = "WEKAS.svg", documentationUrl = "http://wiki.pentaho.com/display/EAI/Weka+Forecasting", name = "PMI Forecasting", description = "This step makes time series forecasts from a pre-built WEKA forecasting model", categoryDescription = "PMI" )
 public class PMIForecastingMeta extends BaseStepMeta implements StepMetaInterface {
 
   public static Class<?> PKG = PMIForecastingMeta.class;

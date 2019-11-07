@@ -6,7 +6,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMIDeepLearningNetwork", image = "WEKAS.svg", name = "PMI Deep learning network", description = "Train and evaluate a deep learning network model", categoryDescription = "Data Mining" )
+@Step( id = "PMIDeepLearningNetwork", image = "WEKAS.svg", name = "PMI Deep learning network", description = "Train and evaluate a deep learning network model", categoryDescription = "PMI" )
 public class PMIDeepLearningNetwork  extends BaseSupervisedPMIStepMeta {
 
   public PMIDeepLearningNetwork() {

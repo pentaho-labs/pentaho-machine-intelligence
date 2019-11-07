@@ -30,7 +30,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMIGradientBoostedTrees", image = "WEKAS.svg", name = "PMI Gradient Boosted Trees", description = "Train and evaluate a gradient boosted trees model", categoryDescription = "Data Mining")
+@Step( id = "PMIGradientBoostedTrees", image = "WEKAS.svg", name = "PMI Gradient Boosted Trees", description = "Train and evaluate a gradient boosted trees model", categoryDescription = "PMI")
 public class PMIGradientBoostedTrees extends BaseSupervisedPMIStepMeta {
 
   public PMIGradientBoostedTrees() {

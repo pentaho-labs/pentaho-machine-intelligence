@@ -28,7 +28,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMIMultiLayerPerceptronClassifier", image = "WEKAS.svg", name = "PMI Multi-layer Perceptron Classifier", description = "Train and evaluate a multi-layer perceptron classification model", categoryDescription = "Data Mining" )
+@Step( id = "PMIMultiLayerPerceptronClassifier", image = "WEKAS.svg", name = "PMI Multi-layer Perceptron Classifier", description = "Train and evaluate a multi-layer perceptron classification model", categoryDescription = "PMI" )
 public class PMIMultiLayerPerceptronClassifier extends BaseSupervisedPMIStepMeta {
 
   public PMIMultiLayerPerceptronClassifier() {

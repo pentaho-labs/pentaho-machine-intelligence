@@ -65,7 +65,7 @@ import java.util.Map;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMIScoring", image = "WEKAS.svg", name = "PMI Scoring", description = "Score or evaluate a PMI model", categoryDescription = "Data Mining" )
+@Step( id = "PMIScoring", image = "WEKAS.svg", name = "PMI Scoring", description = "Score or evaluate a PMI model", categoryDescription = "PMI" )
 public class PMIScoringMeta extends BaseStepMeta implements StepMetaInterface {
 
   public static Class<?> PKG = PMIScoringMeta.class;
