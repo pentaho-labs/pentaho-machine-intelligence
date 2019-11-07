@@ -61,7 +61,7 @@ import java.util.List;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "SupervisedEvaluator", image = "WEKAS.svg", name = "Supervised Evaluator", description = "Compute supervised evaluation metrics for incoming row data that contains predictions from a learning scheme", categoryDescription = "Data Mining" )
+@Step( id = "SupervisedEvaluator", image = "WEKAS.svg", name = "Supervised Evaluator", description = "Compute supervised evaluation metrics for incoming row data that contains predictions from a learning scheme", categoryDescription = "PMI" )
 public class SupervisedEvaluatorMeta extends BaseStepMeta implements StepMetaInterface {
 
   protected String m_className = "";

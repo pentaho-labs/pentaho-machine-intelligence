@@ -28,7 +28,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMIDecisionTreeClassifier", image = "WEKAS.svg", name = "PMI Decision Tree Classifier", description = "Train and evaluate a decision tree for classification model", categoryDescription = "Data Mining" )
+@Step( id = "PMIDecisionTreeClassifier", image = "WEKAS.svg", name = "PMI Decision Tree Classifier", description = "Train and evaluate a decision tree for classification model", categoryDescription = "PMI" )
 public class PMIDecisionTreeClassifier extends BaseSupervisedPMIStepMeta {
 
   public PMIDecisionTreeClassifier() {

@@ -6,7 +6,7 @@ import org.pentaho.di.core.annotations.Step;
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
  * @version $Revision: $
  */
-@Step( id = "PMIXGBClassifier", image = "WEKAS.svg", name = "PMI Extreme Boosting Classifier", description = "Train and evaluate an extreme gradient boosting (xgboost) classifier", categoryDescription = "Data Mining" )
+@Step( id = "PMIXGBClassifier", image = "WEKAS.svg", name = "PMI Extreme Boosting Classifier", description = "Train and evaluate an extreme gradient boosting (xgboost) classifier", categoryDescription = "PMI" )
 public class PMIXGBClassifier extends BaseSupervisedPMIStepMeta {
 
   public PMIXGBClassifier() {

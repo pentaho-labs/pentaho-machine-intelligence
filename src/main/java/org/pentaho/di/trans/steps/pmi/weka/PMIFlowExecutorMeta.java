@@ -66,7 +66,7 @@ import java.util.List;
  */
 @Step( id = "PMIFlowExecutor", image = "WEKAS.svg", name = "PMI Flow Executor", description =
     "Executes a WEKA Knowledge Flow data "
-        + "mining process", documentationUrl = "http://wiki.pentaho.com/display/EAI/Knowledge+Flow", categoryDescription = "Data Mining" )
+        + "mining process", documentationUrl = "http://wiki.pentaho.com/display/EAI/Knowledge+Flow", categoryDescription = "PMI" )
 public class PMIFlowExecutorMeta extends BaseStepMeta implements StepMetaInterface {
 
   public static Class<?> PKG = PMIFlowExecutorMeta.class;
