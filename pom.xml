@@ -12,7 +12,8 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
     <kettle.version>8.2.0.0-SNAPSHOT</kettle.version>
-    <weka.version>3.8.3.1</weka.version>
+    <!-- <weka.version>3.8.3.1</weka.version> -->
+    <weka.version>3.8.5</weka.version>
     <weka.timeseries.version>1.0.25</weka.timeseries.version>
     <weka.kfkettle.version>1.0.5</weka.kfkettle.version>
     <xpp-min.version>1.1.3.4.O</xpp-min.version>
@@ -74,15 +75,21 @@
       <version>${weka.version}</version>
     </dependency> -->
 
+<!--    <dependency>
+      <groupId>nz.ac.waikato.cms.weka</groupId>
+      <artifactId>weka-stable</artifactId>
+      <version>${weka.version}</version>
+    </dependency> -->
+
 <!-- Bit of a hack here (through including a local version of this).
      Unfortunately, changes to 3.8.1.1 in svn are not being picked up
      in Pentaho builds of Weka/PDM 3.8.1.1 for some reason -->
     <dependency>
-      <groupId>pdm-ce</groupId>
-      <artifactId>pdm-ce</artifactId>
+      <groupId>nz.ac.waikato.cms.weka</groupId>
+      <artifactId>weka-stable</artifactId>
       <version>${weka.version}</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/pdm-ce-${weka.version}.jar</systemPath>
+      <systemPath>${basedir}/lib/weka-stable-${weka.version}.jar</systemPath>
     </dependency>
 
     <dependency>
