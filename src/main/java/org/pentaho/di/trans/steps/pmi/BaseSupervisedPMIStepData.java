@@ -1237,9 +1237,10 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
         if ( stepMeta.getOutputIRMetrics() ) {
           String classLabels = classArffMeta.getNominalVals();
           if ( !Const.isEmpty( classLabels ) ) {
-            TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
+            // TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
+            ArrayList<String> preOrdered = new ArrayList<>( ArffMeta.stringToVals( classLabels ) );
             //String[] labels = classLabels.split( "," );
-            for ( String label : ts ) {
+            for ( String label : preOrdered ) {
               label = label.trim();
               vm =
                   ValueMetaFactory
@@ -1283,9 +1284,10 @@ public class BaseSupervisedPMIStepData extends BaseStepData implements StepDataI
         if ( stepMeta.getOutputAUCMetrics() ) {
           String classLabels = classArffMeta.getNominalVals();
           if ( !Const.isEmpty( classLabels ) ) {
-            TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
+            //TreeSet<String> ts = new TreeSet<>( ArffMeta.stringToVals( classLabels ) );
             // String[] labels = classLabels.split( "," );
-            for ( String label : ts ) {
+            ArrayList<String> preOrdered = new ArrayList<>( ArffMeta.stringToVals( classLabels ) );
+            for ( String label : preOrdered ) {
               label = label.trim();
 
               vm =

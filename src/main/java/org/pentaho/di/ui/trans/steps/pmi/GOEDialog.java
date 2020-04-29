@@ -316,7 +316,7 @@ public class GOEDialog extends Dialog {
       final Object value = propDetails.get( "value" );
       String category = (String) propDetails.get( "category" );
 
-      if ( m_propertyGroupingCategory != null ) {
+      if ( m_propertyGroupingCategory.length() > 0 ) {
         if ( category == null || category.length() == 0 || !category.equalsIgnoreCase( m_propertyGroupingCategory ) ) {
           continue;
         }

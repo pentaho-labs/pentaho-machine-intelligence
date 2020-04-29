@@ -540,6 +540,8 @@ public class BaseSupervisedPMIStepDialog extends BaseStepDialog implements StepD
     String[] schemeOpts = m_scheme.getSchemeOptions();
     if ( schemeOpts != null && schemeOpts.length > 0 ) {
       meta.setSchemeCommandLineOptions( Utils.joinOptions( schemeOpts ) );
+    } else {
+      meta.setSchemeCommandLineOptions( "" );
     }
 
     if ( m_incrementalRowCacheField != null ) {

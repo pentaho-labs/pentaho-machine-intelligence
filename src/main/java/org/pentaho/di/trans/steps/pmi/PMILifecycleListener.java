@@ -42,7 +42,8 @@ public class PMILifecycleListener implements KettleLifecycleListener {
 
     // TODO replace this by some code that somehow locates the pdm jar file in plugins/steps/pmi/lib
     // This allows the Spark engine to locate the main weka.jar file for use in the Spark execution environment
-    System.setProperty( "weka.jar.filename", "pdm-ce-3.8.3.1.jar" );
+    //System.setProperty( "weka.jar.filename", "pdm-ce-3.8.3.1.jar" );
+    System.setProperty( "weka.jar.filename", "weka-stable-3.8.5.jar" );
 
     // check that the required packages are installed (and possibly install if not)
     try {

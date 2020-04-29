@@ -167,83 +167,14 @@ public class PMIScoring extends BaseStep implements StepInterface {
 
     Object[] r = getRow();
 
-    if ( r == null ) {
-      if ( !m_meta.getEvaluateRatherThanScore() && m_data.getModel().isBatchPredictor() && !m_meta
-          .getFileNameFromField() && m_batch.size() > 0 ) {
-        try {
-          outputBatchRows( true );
-        } catch ( Exception ex ) {
-          throw new KettleException(
-              BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemWhileGettingPredictionsForBatch" ),
-              ex ); //$NON-NLS-1$
-        }
-      }
-
-      if ( m_meta.getEvaluateRatherThanScore() && m_data.getModel().isSupervisedLearningModel() ) {
-        // generate the output row
-        try {
-          if ( m_data.getModel().isBatchPredictor() ) {
-            outputBatchRows( true );
-          } else {
-            Object[] outputRow = m_data.evaluateForRow( getInputRowMeta(), m_data.getOutputRowMeta(), null, m_meta );
-            putRow( m_data.getOutputRowMeta(), outputRow );
-          }
-        } catch ( Exception ex ) {
-          throw new KettleException(
-              BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemWhileGettingPredictionsForBatch" ),
-              ex ); //$NON-NLS-1$
-        }
-      }
-
-      // see if we have an incremental model that is to be saved somewhere.
-      if ( !m_meta.getFileNameFromField() && m_meta.getUpdateIncrementalModel() ) {
-        if ( !Const.isEmpty( m_meta.getSavedModelFileName() ) ) {
-          // try and save that sucker...
-          try {
-            String modName = environmentSubstitute( m_meta.getSavedModelFileName() );
-            File updatedModelFile = null;
-            if ( modName.startsWith( "file:" ) ) {
-              try {
-                modName = modName.replace( " ", "%20" );
-                updatedModelFile = new File( new java.net.URI( modName ) );
-              } catch ( Exception ex ) {
-                throw new KettleException(
-                    BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.MalformedURIForUpdatedModelFile" ),
-                    ex );
-              }
-            } else {
-              updatedModelFile = new File( modName );
-            }
-            PMIScoringData.saveSerializedModel( m_data.getModel(), updatedModelFile );
-          } catch ( Exception ex ) {
-            throw new KettleException(
-                BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemSavingUpdatedModelToFile" ),
-                ex ); //$NON-NLS-1$
-          }
-        }
-      }
-
-      if ( m_meta.getFileNameFromField() ) {
-        // clear the main model
-        m_data.getModel().done();
-        m_data.setModel( null );
-        m_data.setDefaultModel( null );
-        if ( m_modelCache != null ) {
-          m_modelCache.clear();
-        }
-      } else {
-        m_data.getModel().done();
-        m_data.setModel( null );
-        m_data.setDefaultModel( null );
-      }
-
-      setOutputDone();
-      return false;
-    }
-
     // Handle the first row
     if ( first ) {
       first = false;
+
+      if (r == null) {
+        setOutputDone();
+        return false;
+      }
 
       m_data.setOutputRowMeta( getInputRowMeta().clone() );
       if ( m_meta.getFileNameFromField() ) {
@@ -377,6 +308,80 @@ public class PMIScoring extends BaseStep implements StepInterface {
         m_batch = new ArrayList<Object[]>();
       }
     } // end (if first)
+
+    if ( r == null ) {
+      if ( !m_meta.getEvaluateRatherThanScore() && m_data.getModel().isBatchPredictor() && !m_meta
+          .getFileNameFromField() && m_batch.size() > 0 ) {
+        try {
+          outputBatchRows( true );
+        } catch ( Exception ex ) {
+          throw new KettleException(
+              BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemWhileGettingPredictionsForBatch" ),
+              ex ); //$NON-NLS-1$
+        }
+      }
+
+      if ( m_meta.getEvaluateRatherThanScore() && m_data.getModel().isSupervisedLearningModel() ) {
+        // generate the output row
+        try {
+          if ( m_data.getModel().isBatchPredictor() ) {
+            outputBatchRows( true );
+          } else {
+            Object[] outputRow = m_data.evaluateForRow( getInputRowMeta(), m_data.getOutputRowMeta(), null, m_meta );
+            putRow( m_data.getOutputRowMeta(), outputRow );
+          }
+        } catch ( Exception ex ) {
+          throw new KettleException(
+              BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemWhileGettingPredictionsForBatch" ),
+              ex ); //$NON-NLS-1$
+        }
+      }
+
+      // see if we have an incremental model that is to be saved somewhere.
+      if ( !m_meta.getFileNameFromField() && m_meta.getUpdateIncrementalModel() ) {
+        if ( !Const.isEmpty( m_meta.getSavedModelFileName() ) ) {
+          // try and save that sucker...
+          try {
+            String modName = environmentSubstitute( m_meta.getSavedModelFileName() );
+            File updatedModelFile = null;
+            if ( modName.startsWith( "file:" ) ) {
+              try {
+                modName = modName.replace( " ", "%20" );
+                updatedModelFile = new File( new java.net.URI( modName ) );
+              } catch ( Exception ex ) {
+                throw new KettleException(
+                    BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.MalformedURIForUpdatedModelFile" ),
+                    ex );
+              }
+            } else {
+              updatedModelFile = new File( modName );
+            }
+            PMIScoringData.saveSerializedModel( m_data.getModel(), updatedModelFile );
+          } catch ( Exception ex ) {
+            throw new KettleException(
+                BaseMessages.getString( PMIScoringMeta.PKG, "PMIScoring.Error.ProblemSavingUpdatedModelToFile" ),
+                ex ); //$NON-NLS-1$
+          }
+        }
+      }
+
+      if ( m_meta.getFileNameFromField() ) {
+        // clear the main model
+        m_data.getModel().done();
+        m_data.setModel( null );
+        m_data.setDefaultModel( null );
+        if ( m_modelCache != null ) {
+          m_modelCache.clear();
+        }
+      } else {
+        m_data.getModel().done();
+        m_data.setModel( null );
+        m_data.setDefaultModel( null );
+      }
+
+      setOutputDone();
+      return false;
+    }
 
     // Make prediction for row using model
     try {

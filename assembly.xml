@@ -29,7 +29,7 @@
       <outputDirectory>lib</outputDirectory>
       <includes>
 	<include>kfKettle-${weka.kfkettle.version}.jar</include>
-	<include>pdm-ce-${weka.version}.jar</include>
+	<include>weka-stable-${weka.version}.jar</include>
 	<include>timeseriesForecasting-${weka.timeseries.version}.jar</include>
 	<include>xpp3_min-${xpp-min.version}.jar</include>
       </includes>
